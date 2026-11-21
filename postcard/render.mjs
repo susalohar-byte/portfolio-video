@@ -9,7 +9,7 @@ const srv = http.createServer((q, r) => { const f = path.join(HERE, decodeURICom
 const port = srv.address().port;
 const browser = await chromium.launch(); const page = await browser.newPage({ viewport: { width: 400, height: 700 } });
 page.on('console', m => console.log('[page]', m.text())); page.on('pageerror', e => console.error('[pageerror]', e));
-await page.goto(`http://localhost:${port}/index.html`); await page.waitForFunction('window.READY', null, { timeout: 30000 });
+await page.goto(`http://localhost:${port}/${arg('--page') ?? 'index.html'}`); await page.waitForFunction('window.READY', null, { timeout: 30000 });
 const META = await page.evaluate('window.META');
 fs.mkdirSync(HERE + '/out', { recursive: true }); fs.writeFileSync(HERE + '/out/events.json', JSON.stringify(META.events, null, 1));
 const grab = async t => Buffer.from((await page.evaluate(t => window.frame(t), t)).split(',')[1], 'base64');
