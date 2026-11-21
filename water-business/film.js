@@ -45,9 +45,9 @@ const poly = (g, pts, c) => { g.fillStyle = c; g.beginPath(); pts.forEach((p, i)
 const arch = (g, x, y, w, h, c) => { g.fillStyle = c; g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w / 2); g.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w, y + h); g.closePath(); g.fill(); };
 const stroke = (g, pts, c, w = 6, cap = 'round') => { g.strokeStyle = c; g.lineWidth = w; g.lineCap = cap; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(...p) : g.moveTo(...p)); g.stroke(); };
 function txt(g, s, x, y, font, c, align = 'left') { g.font = font; g.fillStyle = c; g.textAlign = align; g.fillText(s, x, y); g.textAlign = 'left'; }
-function cLine(g, x1, y1, x2, y2, u) { if (u <= 0) return; g.strokeStyle = C.line; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x1, y1); g.lineTo(lerp(x1, x2, eo(u)), lerp(y1, y2, eo(u))); g.stroke(); }
-function cArc(g, x, y, r, a0, a1, u) { if (u <= 0) return; g.strokeStyle = C.line; g.lineWidth = 1.6; g.beginPath(); g.arc(x, y, r, a0, lerp(a0, a1, eo(u))); g.stroke(); }
-function cross(g, x, y, u, s = 16) { if (u <= 0) return; g.strokeStyle = C.ink; g.globalAlpha = clamp(u); g.lineWidth = 1.6; g.beginPath(); g.moveTo(x - s, y); g.lineTo(x + s, y); g.moveTo(x, y - s); g.lineTo(x, y + s); g.stroke(); g.globalAlpha = 1; }
+function cLine(g, x1, y1, x2, y2, u) { return; if (u <= 0) return; g.strokeStyle = C.line; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x1, y1); g.lineTo(lerp(x1, x2, eo(u)), lerp(y1, y2, eo(u))); g.stroke(); }
+function cArc(g, x, y, r, a0, a1, u) { return; if (u <= 0) return; g.strokeStyle = C.line; g.lineWidth = 1.6; g.beginPath(); g.arc(x, y, r, a0, lerp(a0, a1, eo(u))); g.stroke(); }
+function cross(g, x, y, u, s = 16) { return; if (u <= 0) return; g.strokeStyle = C.ink; g.globalAlpha = clamp(u); g.lineWidth = 1.6; g.beginPath(); g.moveTo(x - s, y); g.lineTo(x + s, y); g.moveTo(x, y - s); g.lineTo(x, y + s); g.stroke(); g.globalAlpha = 1; }
 function pop(g, v, px, py, fn, mode = 's') {
   if (v <= 0.001) return;
   g.save(); g.translate(px, py);
@@ -422,14 +422,17 @@ function labels(g, sc, V) {
 }
 function wrap(g, s, maxW) { const out = []; let cur = ''; for (const w of s.split(' ')) { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; }
 function captions(g, sc, t, V) {
-  const tv = V(0.35, 0.6);
-  if (tv > 0) { g.save(); g.globalAlpha = clamp(tv * 2); txt(g, sc.title, 70, 1440 + (1 - eo(tv)) * 30, F.bn(68, 700), C.ink); g.restore(); }
+  const tv = V(0.25, 0.6);
+  if (tv > 0) { g.save(); g.globalAlpha = clamp(tv * 2); g.font = F.bn(74, 700); const tw = g.measureText(sc.title).width;
+    txt(g, sc.title, 540, 350 + (1 - eo(tv)) * 24, F.bn(74, 700), C.ink, 'center');
+    rect(g, 540 - tw * 0.18 * eo(tv), 382, tw * 0.36 * eo(tv), 6, C.orange); g.restore(); }
   const offs = PARTS[sc.id]; if (!offs) return;
   let k = -1; offs.forEach((o, i) => { if (t >= sc.v + o - 0.12) k = i; });
   if (k < 0) return;
   const ap = eo((t - (sc.v + offs[k] - 0.12)) / 0.3), vis = Math.min(ap, V(0, 0.01));
-  g.save(); g.globalAlpha = vis; g.font = F.bn(40, 500);
-  wrap(g, sc.parts[k], 940).slice(0, 3).forEach((l, i) => txt(g, l, 70, 1522 + i * 56 + (1 - ap) * 12, F.bn(40, 500), '#3A3631'));
+  g.save(); g.globalAlpha = vis; g.font = F.bn(46, 600);
+  const ls = wrap(g, sc.parts[k], 920).slice(0, 3);
+  ls.forEach((l, i) => txt(g, l, 540, 462 + i * 62 + (1 - ap) * 10, F.bn(46, 600), '#2E2A26', 'center'));
   g.restore();
 }
 export function draw(g, t) {
@@ -439,11 +442,11 @@ export function draw(g, t) {
   const sc = SC[si], lt = t - sc.a, last = si === SC.length - 1, V = makeV(sc, lt, last);
   const P = k => LEAD + (PARTS[sc.id][Math.min(k, PARTS[sc.id].length - 1)] ?? 0);
   const L = LAYER.getContext('2d'); L.clearRect(0, 0, W, H);
-  L.save(); const z = 1 + 0.03 * ss(0, sc.b - sc.a, lt); L.translate(540, 830); L.scale(z, z); L.translate(-540, -830);
+  L.save(); const z = 0.92 * (1 + 0.03 * ss(0, sc.b - sc.a, lt)); L.translate(540, 1090); L.scale(z, z); L.translate(-540, -830);
   sc.art(L, lt, V, P, t, last); L.restore();
   L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.5; const sp = L.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate((si * 97) % 512, (si * 61) % 512)); L.fillStyle = sp; L.fillRect(0, 0, W, H); L.restore();
   g.drawImage(LAYER, 0, 0);
-  labels(g, sc, V); captions(g, sc, t, V);
+  captions(g, sc, t, V);
   g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.11;
   const gp = g.createPattern(GRAIN, 'repeat'); gp.setTransform(new DOMMatrix().translate(-Math.floor((t * 24 * 37) % 512), -Math.floor((t * 24 * 53) % 512))); g.fillStyle = gp; g.fillRect(0, 0, W, H); g.restore();
   const fade = Math.max(1 - ss(0, 0.45, t), ss(DURATION - 0.9, DURATION, t));
