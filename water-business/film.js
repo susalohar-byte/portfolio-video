@@ -464,37 +464,66 @@ function captions(g, sc, t, V) {
     penLine(g, 540, 372, Math.min(820, tw * 0.9 + 60), clamp((t - sc.a - 0.45) / 0.55), sc.n * 7);
     g.restore();
   }
-  // caption on a paper-cut strip below the ground line
+  // captions: short lines (as many words as fit the paper-cut box), each word typed in as it is spoken
   const offs = PARTS[sc.id]; if (!offs) return;
-  let k = -1; offs.forEach((o, i) => { if (t >= sc.v + o - 0.12) k = i; });
-  const draw1 = (kk, inU, outU) => {
-    if (kk < 0) return;
-    const p0 = sc.v + offs[kk], p1 = sc.v + (kk + 1 < offs.length ? offs[kk + 1] - 0.25 : DUR[sc.id]);
-    const said = clamp((t - p0) / Math.max(0.3, p1 - p0));
-    g.font = F.cap(44, 600);
-    const ls = wrap(g, sc.parts[kk], 800).slice(0, 3), lh = 60, hh = ls.length * lh + 44;
-    const ww = Math.min(900, Math.max(...ls.map(l => g.measureText(l).width)) + 90);
-    const cy = 1495 + (ls.length - 2) * 18, seed = sc.n * 31 + kk * 7;
-    const rot = ((seed % 7) - 3) * 0.006;
-    const e = back(inU, 1.4), o = eio(outU);
-    g.save();
-    g.globalAlpha = clamp(inU * 3) * (1 - o) * Math.min(1, V(0, 0.01) * 1.0001 + (sc === SC[SC.length - 1] ? 0 : 0));
-    g.translate(540 + o * 140, cy + (1 - e) * 70 + o * 40); g.rotate(rot + (1 - e) * -0.08 + o * 0.12);
-    g.scale(lerp(0.92, 1, e), lerp(0.6, 1, e));
-    paperStrip(g, 0, 0, ww, hh, seed);
-    let left = said * ls.reduce((a, l) => a + l.length, 0) * 1.04;
-    ls.forEach((l, i) => {
-      const y = -hh / 2 + 22 + lh * (i + 0.78), w = g.measureText(l).width, x0 = -w / 2;
-      txt(g, l, x0, y, F.cap(44, 600), '#B3AA9D');
-      const n = clamp(left / l.length); left -= l.length;
-      if (n > 0) { g.save(); g.beginPath(); g.rect(x0 - 6, y - 56, w * n + 6, 76); g.clip(); txt(g, l, x0, y, F.cap(44, 600), C.ink); g.restore(); }
-    });
+  const CH = chunksFor(g, sc);
+  let ci = -1; CH.forEach((c, i) => { if (t >= c.t0) ci = i; });
+  if (ci < 0) return;
+  const vis = V(0, 0.01);
+  if (vis <= 0) return;
+  const ACC = [C.orange, C.blue, C.mustard, C.teal, C.red, C.green], acc = ACC[(sc.n - 1) % ACC.length];
+  const draw1 = (c, wus, inU) => {
+    // width = words spoken so far (the newest one eases in), the paper grows with it and reveals the word
+    const vw = c.words.reduce((a, wd, j) => a + (wd.w + (j ? c.sp : 0)) * wus[j], 0);
+    const e = back(inU, 1.5);
+    g.save(); g.globalAlpha = vis;
+    g.translate(540, 1478 + (1 - e) * 30); g.rotate(c.rot + (1 - e) * 0.05); g.scale(lerp(0.9, 1, e), lerp(0.75, 1, e));
+    paperCut(g, vw + 84, 104, c.seed, acc);
+    g.beginPath(); g.rect(-vw / 2 - 6, -60, vw + 12, 120); g.clip();
+    let x = -vw / 2;
+    c.words.forEach((wd, j) => { if (wus[j] <= 0) return; if (j) x += c.sp; txt(g, wd.s, x, 18, F.cap(52, 700), wd.hi ? (acc === C.mustard ? C.terra : acc) : C.ink); x += wd.w; });
     g.restore();
   };
-  if (k < 0) return;
-  const tk = sc.v + offs[k] - 0.12, inU = clamp((t - tk) / 0.38);
-  if (k > 0 && inU < 1) draw1(k - 1, 1, clamp((t - tk) / 0.25));
-  draw1(k, inU, 0);
+  const c = CH[ci], wus = c.words.map(wd => eo(clamp((t - wd.t) / 0.18)));
+  const vw = c.words.reduce((a, wd, j) => a + (wd.w + (j ? c.sp : 0)) * wus[j], 0);
+  if (vw < 60 && ci > 0 && CH[ci - 1].t0 > c.t0 - 8) draw1(CH[ci - 1], CH[ci - 1].words.map(() => 1), 1);
+  else if (vw >= 2) draw1(c, wus, clamp((t - c.t0) / 0.3));
+}
+// two-layer paper cut: coloured paper behind, cream paper with scissor-cut edges in front
+function paperCut(g, w, h, seed, acc) {
+  const R = rng(seed);
+  const edge = (ww, hh, j) => { const pts = []; const st = 22;
+    for (let x = -ww / 2; x <= ww / 2; x += st) pts.push([x, -hh / 2 + (R() - 0.5) * j]);
+    pts.push([ww / 2 + (R() - 0.5) * j, 0]);
+    for (let x = ww / 2; x >= -ww / 2; x -= st) pts.push([x, hh / 2 + (R() - 0.5) * j]);
+    pts.push([-ww / 2 + (R() - 0.5) * j, 0]); return pts; };
+  const back = edge(w + 16, h + 14, 8), front = edge(w, h, 6);
+  g.save(); g.translate(10, 12); poly(g, back, 'rgba(60,40,20,0.20)'); g.restore();
+  g.save(); g.translate(6, 7); g.rotate(0.025); poly(g, back, acc); g.restore();
+  poly(g, front, '#FBF7EE');
+}
+// split every sentence of a scene into one-line chunks and give each word a start time (proportional to its length)
+const CHUNKS = {};
+function chunksFor(g, sc) {
+  if (CHUNKS[sc.id]) return CHUNKS[sc.id];
+  g.save(); g.font = F.cap(52, 700); const sp = g.measureText(' ').width;
+  const out = [], offs = PARTS[sc.id];
+  sc.parts.forEach((sent, k) => {
+    const p0 = sc.v + offs[k], p1 = sc.v + (k + 1 < offs.length ? offs[k + 1] - 0.3 : DUR[sc.id] - 0.1);
+    const ws = sent.split(' ').filter(Boolean), wt = ws.map(w => w.length + 2), tot = wt.reduce((a, b) => a + b, 0);
+    let acc = 0, cur = [];
+    const flush = () => { if (!cur.length) return; const w = cur.reduce((a, x) => a + x.w, 0) + sp * (cur.length - 1); const seed = sc.n * 97 + out.length * 13; out.push({ t0: cur[0].t - 0.05, words: cur, w, sp, seed, rot: ((seed % 5) - 2) * 0.008 }); cur = []; };
+    ws.forEach((w, i) => {
+      const ww = g.measureText(w).width, wtime = p0 + (p1 - p0) * acc / tot; acc += wt[i];
+      const curW = cur.reduce((a, x) => a + x.w, 0) + sp * cur.length;
+      if (cur.length && (curW + ww > 760 || cur.length >= 5)) flush();
+      cur.push({ s: w, w: ww, t: wtime, hi: /[০-৯\d]/.test(w) || /টাকা|লাখ|হাজার/.test(w) });
+      if (/[,।?!]$/.test(w) && cur.length >= 2) flush();
+    });
+    flush();
+  });
+  g.restore();
+  return (CHUNKS[sc.id] = out);
 }
 export function draw(g, t) {
   textures();

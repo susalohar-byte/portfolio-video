@@ -1,6 +1,6 @@
 # Use your own recorded voice-over.
 #   python3 voice_import.py rec/                -> rec/S01.(wav|mp3|m4a) … rec/S16.*  (one file per chapter)
-#   python3 voice_import.py my_full_take.m4a    -> one file; chapters split at the 15 longest pauses (keep ~2 s silence between chapters)
+#   python3 voice_import.py part1.mp3 part2.mp3 …  -> one or more files in order; chapters split at the 15 longest pauses (keep ~2 s silence between chapters)
 # Writes voice/S01.wav … voice/S16.wav and voice/dur.json (chapter length + sentence offsets) for film.js.
 import json, os, sys, glob, subprocess, numpy as np
 H = os.path.dirname(os.path.abspath(__file__)); V = H + '/voice'; os.makedirs(V, exist_ok=True)
@@ -22,14 +22,17 @@ def trim(x):
     _, on = gaps(x, 9e9); i0 = int(np.argmax(on)); i1 = len(on) - int(np.argmax(on[::-1]))
     return x[max(0, i0 - 2400):i1 + 4800]
 src = sys.argv[1]
-if os.path.isdir(src):
+if len(sys.argv) > 2 or os.path.isfile(src):
+    xs = [load(f) for f in sys.argv[1:]]
+    joined = np.concatenate(sum([[a, np.zeros(SR * 2)] for a in xs], [])[:-1])
+if os.path.isdir(src) and len(sys.argv) == 2:
     clips = {}
     for l in L:
         f = next(iter(sorted(glob.glob(f"{src}/{l['id']}.*"))), None)
         if not f: sys.exit(f"missing {l['id']} in {src}")
         clips[l['id']] = trim(load(f))
 else:
-    x = load(src); g, _ = gaps(x, 0.9)
+    x = joined; g, _ = gaps(x, 0.9)
     cut = sorted(sorted(g, reverse=True)[:len(L) - 1], key=lambda a: a[1])
     if len(cut) < len(L) - 1: sys.exit('could not find 15 chapter pauses — leave ~2 s silence between chapters, or send one file per chapter')
     bounds = [0] + [(c[1] + c[2]) // 2 for c in cut] + [len(x)]
