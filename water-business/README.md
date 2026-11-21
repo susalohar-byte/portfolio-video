@@ -6,7 +6,7 @@
 
 ## Build
 
-Music + SFX: `./fetch_audio.sh` (Mixkit, free licence; not committed). Story acts: Discover → Piano Reflections (first month) → Dreaming Big (the turn) → Silent Descent (problems) → Driving Ambition (growth).
+Music + SFX: `./fetch_audio.sh` (Mixkit, free licence; not committed). One motivational track (Driving Ambition) at ~3 % under the voice; soft page-turn on scene changes, coin chime on the two totals.
 
 ```sh
 GEMINI_API_KEY=... python3 tts_gemini.py          # voice/S01..S16.wav + voice/dur.json (Gemini TTS, voice "Charon")
