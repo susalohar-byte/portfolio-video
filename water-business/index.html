@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8">
+<style>
+@font-face{font-family:Plex;font-weight:500;src:url(fonts/ibm-plex-mono-latin-500-normal.woff2)}
+@font-face{font-family:Hind;font-weight:500;src:url(fonts/hind-siliguri-bengali-500-normal.woff2)}
+@font-face{font-family:Hind;font-weight:600;src:url(fonts/hind-siliguri-bengali-600-normal.woff2)}
+@font-face{font-family:Hind;font-weight:700;src:url(fonts/hind-siliguri-bengali-700-normal.woff2)}
+@font-face{font-family:Hind;font-weight:500;src:url(fonts/hind-siliguri-latin-500-normal.woff2);unicode-range:U+0000-00FF,U+20B9,U+2212,U+2248,U+2014,U+00D7}
+@font-face{font-family:Hind;font-weight:600;src:url(fonts/hind-siliguri-latin-600-normal.woff2);unicode-range:U+0000-00FF,U+20B9,U+2212,U+2248,U+2014,U+00D7}
+@font-face{font-family:Hind;font-weight:700;src:url(fonts/hind-siliguri-latin-600-normal.woff2);unicode-range:U+0000-00FF,U+20B9,U+2212,U+2248,U+2014,U+00D7}
+html,body{margin:0;background:#111}canvas{width:360px;height:640px}
+</style>
+<canvas id=c width=1080 height=1920></canvas>
+<script type=module>
+import { draw, setup, FPS, events, voiceStarts } from './film.js';
+import * as film from './film.js';
+const vdir = new URLSearchParams(location.search).get('voice') === 'preview' ? 'voice/preview' : 'voice';
+const [lines, dur] = await Promise.all([fetch('lines.json').then(r => r.json()), fetch(vdir + '/dur.json').then(r => r.json())]);
+setup(lines, dur);
+await Promise.all(['500 24px Plex', '700 68px Hind', '600 40px Hind', '500 40px Hind'].map(f => document.fonts.load(f, 'বাংলা A ₹')));
+const g = document.getElementById('c').getContext('2d');
+window.frame = async t => { draw(g, t); return g.canvas.toDataURL('image/jpeg', 0.93); };
+window.META = { DURATION: film.DURATION, FPS, events: events(), voice: voiceStarts(), vdir };
+window.READY = true;
+if (!navigator.webdriver) { const t0 = performance.now(); const loop = () => { draw(g, ((performance.now() - t0) / 1000) % film.DURATION); requestAnimationFrame(loop); }; loop(); }
+</script>
