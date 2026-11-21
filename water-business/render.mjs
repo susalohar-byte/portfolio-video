@@ -13,7 +13,9 @@ await page.goto(`http://localhost:${port}/${arg('--page') ?? 'index.html'}`); aw
 const META = await page.evaluate('window.META');
 fs.mkdirSync(HERE + '/out', { recursive: true }); fs.writeFileSync(HERE + '/out/events.json', JSON.stringify(META.events, null, 1)); fs.writeFileSync(HERE + '/out/meta.json', JSON.stringify({ DURATION: META.DURATION, voice: META.voice, vdir: META.vdir }, null, 1)); console.log('duration', META.DURATION);
 const grab = async t => Buffer.from((await page.evaluate(t => window.frame(t), t)).split(',')[1], 'base64');
-if (arg('--still')) {
+if (process.argv.includes('--thumb')) {
+  fs.writeFileSync(HERE + '/thumbnail.jpg', Buffer.from((await page.evaluate(() => window.thumb())).split(',')[1], 'base64'));
+} else if (arg('--still')) {
   for (const s of (arg('--still') === 'auto' ? META.voice.map(v => (v.t + 4).toFixed(1)) : arg('--still').split(','))) fs.writeFileSync(`${HERE}/out/still_${s}.jpg`, await grab(+s));
 } else {
   const fps = META.FPS, t0 = +(arg('--from') ?? 0), t1 = +(arg('--to') ?? META.DURATION), out = arg('--out') ?? HERE + '/out/video.mp4';

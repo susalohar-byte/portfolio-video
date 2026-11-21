@@ -18,6 +18,7 @@ const [lines, dur] = await Promise.all([fetch('lines.json').then(r => r.json()),
 setup(lines, dur);
 await Promise.all(['500 24px Plex', '700 68px Hind', '600 40px Hind', '500 40px Hind'].map(f => document.fonts.load(f, 'বাংলা A ₹')));
 const g = document.getElementById('c').getContext('2d');
+window.thumb = async () => { film.thumb(g); return g.canvas.toDataURL('image/jpeg', 0.95); };
 window.frame = async t => { draw(g, t); return g.canvas.toDataURL('image/jpeg', 0.93); };
 window.META = { DURATION: film.DURATION, FPS, events: events(), voice: voiceStarts(), vdir };
 window.READY = true;

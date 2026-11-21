@@ -29,6 +29,7 @@ const eio = u => { u = clamp(u); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-
 const back = (u, s = 1.6) => { u = clamp(u) - 1; return u * u * ((s + 1) * u + s) + 1; };
 function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 const TAU = Math.PI * 2;
+let TNOW = 0;
 const bnd = s => String(s).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
 function inr(n) { // Indian grouping, Bengali digits
   const s = String(Math.round(Math.abs(n))); const last3 = s.slice(-3), rest = s.slice(0, -3);
@@ -51,7 +52,7 @@ function cross(g, x, y, u, s = 16) { return; if (u <= 0) return; g.strokeStyle =
 function pop(g, v, px, py, fn, mode = 's') {
   if (v <= 0.001) return;
   g.save(); g.translate(px, py);
-  if (mode === 's') { const k = back(v, 1.5); g.scale(k, k); }
+  if (mode === 's') { const k = back(v, 1.5), ph = px * 0.013 + py * 0.007; g.translate(0, Math.sin(TNOW * 1.7 + ph) * 5 * v); g.rotate((1 - eo(v)) * 0.25 * Math.sin(ph * 3) + Math.sin(TNOW * 1.3 + ph) * 0.012 * v); g.scale(k, k); }
   else if (mode === 'y') g.scale(1, eo(v));
   else if (mode === 'x') g.scale(eo(v), 1);
   else if (mode === 'up') g.translate(0, (1 - eo(v)) * 140);
@@ -70,7 +71,8 @@ function person(g, x, y, s, o = {}) {
   const sk = o.skin || C.skin, sh = o.shirt || C.teal, pa = o.pants || C.navy, f = o.face ?? 1, t = o.t ?? 0;
   g.save(); g.translate(x, y); g.scale(s, s);
   const w = o.walk != null ? Math.sin(o.walk) : 0, bob = o.walk != null ? Math.abs(Math.cos(o.walk)) * 4 : 0;
-  g.translate(0, -bob);
+  const idle = o.walk == null ? 1 : 0, br = Math.sin(t * 2.1 + x * 0.01);
+  g.translate(0, -bob); if (idle) { g.translate(0, -4); g.scale(1, 1 + br * 0.012); g.translate(0, 4); }
   // legs
   if (o.sari) {
     poly(g, [[-46, -80], [46, -80], [58, 0], [-58, 0]], o.sari);
@@ -80,7 +82,8 @@ function person(g, x, y, s, o = {}) {
   }
   // arms (behind body for the far one)
   const arm = (sx, ang, front) => { g.save(); g.translate(sx, -176); g.rotate(ang); rrect(g, -11, -6, 22, 92, 11, front ? sh : mixc(sh, '#000000', 0.15)); circ(g, 0, 90, 12, sk); if (front && o.hold) { g.translate(0, 96); o.hold(g); } g.restore(); };
-  const aL = (o.armL ?? 0) + (o.walk != null ? w * 0.5 : 0), aR = (o.armR ?? 0) - (o.walk != null ? w * 0.5 : 0);
+  const sway = idle ? Math.sin(t * 1.6 + x * 0.02) * 0.07 : 0;
+  const aL = (o.armL ?? 0) + (o.walk != null ? w * 0.5 : 0) + sway, aR = (o.armR ?? 0) - (o.walk != null ? w * 0.5 : 0) - sway;
   arm(-44, aL, false);
   // body
   if (o.sari) { rrect(g, -42, -190, 84, 116, 18, sh); poly(g, [[-42, -190], [-10, -190], [42, -80], [10, -80]], o.sari); }
@@ -88,6 +91,7 @@ function person(g, x, y, s, o = {}) {
   arm(44, aR, true);
   // head
   rect(g, -9, -204, 18, 16, sk);
+  g.save(); g.translate(0, -204); g.rotate(idle ? Math.sin(t * 0.9 + x * 0.03) * 0.05 : 0); g.translate(0, 204);
   circ(g, 0, -236, 36, sk);
   const hc = o.hairc || C.ink;
   if (o.hair === 'cap') { half(g, 0, -244, 38, o.capc || C.red); rect(g, f > 0 ? 0 : -58, -248, 58, 9, o.capc || C.red); }
@@ -104,6 +108,7 @@ function person(g, x, y, s, o = {}) {
   else if (m === 'sad') { g.strokeStyle = C.ink; g.lineWidth = 3.5; g.beginPath(); g.arc(ex, -210, 9, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); }
   else rect(g, ex - 8, -220, 16, 3.5, C.ink);
   if (o.sari) circ(g, ex, -252, 3.5, C.red);
+  g.restore();
   g.restore();
 }
 const rahul = (g, x, y, s, o = {}) => person(g, x, y, s, { shirt: C.teal, pants: C.navy, hair: 'short', ...o });
@@ -172,7 +177,7 @@ ART.S01 = (g, lt, V, P, t) => {
   const wx = lerp(-120, 540, eio((lt - 0.8) / 2.6)), walking = lt > 0.8 && lt < 3.4;
   rahul(g, wx, 1280, 1.15, { walk: walking ? lt * 7 : null, t, armR: lt > P(1) ? -0.4 : 0, hold: lt > P(1) ? (gg) => {} : null });
   // pocket money + plan bubble
-  pop(g, V(P(1) + 0.2), 300, 1260, () => { coinStack(g, 300, 1260, 8); tag(g, 300, 1100, '₹৩ লাখ', C.mustard, C.ink, 38); });
+  pop(g, V(P(1) + 0.2), 300, 1260, () => { coinStack(g, 300, 1260, Math.max(1, Math.round(8 * eo((lt - P(1) - 0.2) / 1.2)))); tag(g, 300, 1100, '₹৩ লাখ', C.mustard, C.ink, 38); });
   pop(g, V(P(1) + 0.9), 760, 760, () => { circ(g, 650, 1000, 16, C.cream); circ(g, 690, 940, 24, C.cream); rrect(g, 600, 640, 360, 250, 120, C.cream); txt(g, 'প্ল্যান', 780, 730, F.bn(40, 600), C.ink, 'center'); bigNum(g, '₹১১ লাখ', 780, 820, 66, C.blue); });
   pop(g, V(P(2) + 0.1), 540, 470, () => { tag(g, 540, 470, 'এক বছর পরে, মাসে কত?', C.ink, C.cream, 44); });
 };
@@ -239,7 +244,7 @@ ART.S06 = (g, lt, V, P, t) => {
     const v = V(d, 0.8); if (v <= 0) return;
     const hh = amt / 700000 * 600 * eo(v);
     rect(g, x - 100, 1150 - hh, 200, hh, c); for (let k = 1; k < hh / 40; k++) rect(g, x - 100, 1150 - k * 40, 200, 3, 'rgba(31,29,27,0.15)');
-    g.globalAlpha = clamp(v * 2); bigNum(g, inr(amt), x, 1130 - hh - 22, 44, C.ink); txt(g, name, x, 1210, F.bn(36, 600), C.ink, 'center'); g.globalAlpha = 1;
+    g.globalAlpha = clamp(v * 2); bigNum(g, inr(Math.round(amt * eo(v) / 1000) * 1000), x, 1130 - hh - 22, 44, C.ink); txt(g, name, x, 1210, F.bn(36, 600), C.ink, 'center'); g.globalAlpha = 1;
   });
   pop(g, V(0.4), 540, 460, () => { for (let i = 0; i < 3; i++) coin(g, 470 + i * 70, 470 + Math.sin(lt * 2 + i) * 6, 32); });
   pop(g, V(P(2) + 0.1), 540, 1290, () => { tag(g, 540, 1290, 'কিস্তি ₹১৫,২০০ / মাস × ৬০', C.ink, C.cream, 38); });
@@ -323,13 +328,13 @@ ART.S12 = (g, lt, V, P, t) => {
   const labs = [['৪০০ বাড়ি', C.pink], ['৩০ দোকান', C.mustard], ['২ স্কুল', C.red], ['অফিস', C.teal]];
   labs.forEach(([s, c], i) => pop(g, V(P(0) + 0.4 + i * 0.8), 170 + i * 250, 1150, () => tag(g, 170 + i * 250, 1150, s, c, C.ink, 34)));
   pop(g, V(P(1) + 0.1), 540, 1260, () => { const x = lerp(-300, 1300, ss(P(1), P(1) + 4.5, lt)); rickshaw(g, x, 1330, 0.55, 8, lt * 8); });
-  pop(g, V(P(1) + 0.5), 540, 440, () => tag(g, 540, 440, '২২০ জার / দিন', C.blue, C.cream, 54));
+  pop(g, V(P(1) + 0.5), 540, 440, () => tag(g, 540, 440, bnd(Math.round(220 * eo((lt - P(1) - 0.5) / 1.6))) + ' জার / দিন', C.blue, C.cream, 54));
 };
 const COST13 = [['ফিল্টার, ক্যাপ, বিদ্যুৎ, জ্বালানি', 36400, C.orange], ['৩ জন কর্মীর বেতন', 28000, C.red], ['ভাড়া, টেস্ট, জার, অন্যান্য', 16750, C.mustard], ['লোনের কিস্তি', 15200, C.blue]];
 ART.S13 = (g, lt, V, P, t) => {
   cArc(g, 540, 820, 440, -Math.PI / 2, Math.PI * 1.5, V(0, 1.2)); cross(g, 100, 360, V(0.3)); cross(g, 980, 1300, V(0.35));
   const X0 = 120, X1 = 960, rev = 165000, sx = (X1 - X0) / rev;
-  pop(g, V(P(1) + 0.2, 0.7), X0, 520, () => { rect(g, X0, 470, X1 - X0, 100, C.green); txt(g, 'বিক্রি', X0, 448, F.bn(34, 700), C.ink); txt(g, '৬,৬০০ জার × ₹২৫', X1, 448, F.bn(30, 600), C.ink, 'right'); bigNum(g, inr(rev), 540, 538, 54, C.cream); }, 'x');
+  pop(g, V(P(1) + 0.2, 0.7), X0, 520, () => { rect(g, X0, 470, X1 - X0, 100, C.green); txt(g, 'বিক্রি', X0, 448, F.bn(34, 700), C.ink); txt(g, '৬,৬০০ জার × ₹২৫', X1, 448, F.bn(30, 600), C.ink, 'right'); bigNum(g, inr(Math.round(rev * eo((lt - P(1) - 0.2) / 1.4) / 100) * 100), 540, 538, 54, C.cream); }, 'x');
   let used = 0;
   COST13.forEach(([n, amt, c], i) => {
     const d = P(i + 2) + 0.15, v = V(d, 0.7); if (v <= 0) { used += amt; return; }
@@ -340,7 +345,7 @@ ART.S13 = (g, lt, V, P, t) => {
     g.globalAlpha = clamp(v * 2); txt(g, n, X0, y + 120 - 10, F.bn(28, 600), C.ink); txt(g, '−' + inr(amt), X1, y + 120 - 10, F.bn(34, 700), c, 'right'); g.globalAlpha = 1;
     used += amt;
   });
-  pop(g, V(P(6) + 0.1), 540, 1260, () => { const px = X0 + used * sx; rect(g, px, 1170, X1 - px, 100, C.green); stroke(g, [[px, 570], [px, 1170]], C.ink, 3); txt(g, 'লাভ', X0, 1240, F.bn(48, 700), C.ink); bigNum(g, '≈ ₹৬৮,০০০', (px + X1) / 2 - 30, 1310, 54, C.green); });
+  pop(g, V(P(6) + 0.1), 540, 1260, () => { const px = X0 + used * sx; rect(g, px, 1170, X1 - px, 100, C.green); stroke(g, [[px, 570], [px, 1170]], C.ink, 3); txt(g, 'লাভ', X0, 1240, F.bn(48, 700), C.ink); bigNum(g, '≈ ' + inr(Math.round(68000 * eo((lt - P(6) - 0.1) / 1.4) / 100) * 100), (px + X1) / 2 - 30, 1310, 54, C.green); });
 };
 ART.S14 = (g, lt, V, P, t) => {
   cross(g, 100, 360, V(0.3)); cross(g, 980, 1300, V(0.35)); cLine(g, 70, 830, 1010, 830, V(0.1, 0.9));
@@ -364,7 +369,7 @@ ART.S15 = (g, lt, V, P, t) => {
   pop(g, V(0.3, 0.6), 540, Y0, () => { rect(g, X0 - 10, Y0, X1 - X0 + 20, 4, C.ink); txt(g, '০', X0 - 24, Y0 + 10, F.mono(22), C.ink, 'right'); }, 'x');
   MONTHS.forEach((m, i) => pop(g, V(0.4 + i * 0.12 + (i < 6 ? 0 : P(1) * 0.5), 0.5), X0 + i * bw + bw / 2, Y0, () => { const h = m * sy; rect(g, X0 + i * bw + 8, m > 0 ? Y0 - h : Y0 + 4, bw - 16, Math.abs(h), m > 0 ? (i >= 7 && i <= 8 ? C.orange : C.green) : C.red); txt(g, bnd(i + 1), X0 + i * bw + bw / 2, Y0 + (m < 0 ? Math.abs(m * sy) + 40 : 40), F.mono(20), C.ink, 'center'); }, 'y'));
   pop(g, V(0.8), X0 + 3 * bw, 900, () => { g.strokeStyle = C.ink; g.lineWidth = 2; g.setLineDash([6, 8]); g.strokeRect(X0, 400, bw * 6, 470); g.setLineDash([]); txt(g, 'প্রথম ৬ মাস', X0 + 3 * bw, 430, F.bn(28, 600), C.ink, 'center'); });
-  pop(g, V(P(1) + 0.2), 300, 1080, () => { coinStack(g, 220, 1150, 10, C.mustard); txt(g, '₹৪,৬৫,০০০', 300, 1060, F.bn(40, 700), C.ink); txt(g, 'নিজের টাকা ফেরত', 300, 1100, F.bn(28, 600), C.green); });
+  pop(g, V(P(1) + 0.2), 300, 1080, () => { coinStack(g, 220, 1150, 10, C.mustard); txt(g, inr(Math.round(465000 * eo((lt - P(1) - 0.2) / 1.6) / 1000) * 1000), 300, 1060, F.bn(40, 700), C.ink); txt(g, 'নিজের টাকা ফেরত', 300, 1100, F.bn(28, 600), C.green); });
   pop(g, V(P(2) + 0.1), 780, 1080, () => { const u = ss(P(2), P(2) + 3, lt); rect(g, 680, 1080, 220, 50, C.shade); rect(g, 680, 1080, 220 * (1 - 0.18 * u), 50, C.blue); txt(g, 'লোন বাকি', 790, 1060, F.bn(28, 600), C.ink, 'center'); });
   const L3 = ['আগে লাইসেন্স', 'রোজ জারের হিসেব', 'মানে আপস নয়'];
   L3.forEach((s, i) => pop(g, V(P(3) + 1.0 + i * 1.5), 200 + i * 340, 1270, () => { circ(g, 200 + i * 340 - 110, 1270, 30, C.ink); txt(g, bnd(i + 1), 200 + i * 340 - 110, 1282, F.bn(32, 700), C.cream, 'center'); txt(g, s, 200 + i * 340 - 68, 1282, F.bn(28, 700), C.ink); }));
@@ -424,15 +429,22 @@ function wrap(g, s, maxW) { const out = []; let cur = ''; for (const w of s.spli
 function captions(g, sc, t, V) {
   const tv = V(0.25, 0.6);
   if (tv > 0) { g.save(); g.globalAlpha = clamp(tv * 2); g.font = F.bn(74, 700); const tw = g.measureText(sc.title).width;
-    txt(g, sc.title, 540, 350 + (1 - eo(tv)) * 24, F.bn(74, 700), C.ink, 'center');
-    rect(g, 540 - tw * 0.18 * eo(tv), 382, tw * 0.36 * eo(tv), 6, C.orange); g.restore(); }
+    txt(g, sc.title, 540, 350 + (1 - eo(tv)) * 24, F.bn(74, 700), C.ink, 'center'); g.restore(); }
   const offs = PARTS[sc.id]; if (!offs) return;
   let k = -1; offs.forEach((o, i) => { if (t >= sc.v + o - 0.12) k = i; });
   if (k < 0) return;
   const ap = eo((t - (sc.v + offs[k] - 0.12)) / 0.3), vis = Math.min(ap, V(0, 0.01));
+  const p0 = sc.v + offs[k], p1 = sc.v + (k + 1 < offs.length ? offs[k + 1] - 0.25 : DUR[sc.id]);
+  const said = clamp((t - p0) / Math.max(0.3, p1 - p0));
   g.save(); g.globalAlpha = vis; g.font = F.bn(46, 600);
-  const ls = wrap(g, sc.parts[k], 920).slice(0, 3);
-  ls.forEach((l, i) => txt(g, l, 540, 462 + i * 62 + (1 - ap) * 10, F.bn(46, 600), '#2E2A26', 'center'));
+  const ls = wrap(g, sc.parts[k], 920).slice(0, 3), tot = ls.reduce((a, l) => a + l.length, 0);
+  let left = said * tot * 1.04;
+  ls.forEach((l, i) => {
+    const y = 462 + i * 62 + (1 - ap) * 10, w = g.measureText(l).width, x0 = 540 - w / 2;
+    txt(g, l, x0, y, F.bn(46, 600), '#A39C92');
+    const n = clamp(left / l.length); left -= l.length;
+    if (n > 0) { g.save(); g.beginPath(); g.rect(x0 - 6, y - 60, w * n + 6, 84); g.clip(); txt(g, l, x0, y, F.bn(46, 600), '#1F1D1B'); g.restore(); }
+  });
   g.restore();
 }
 export function draw(g, t) {
@@ -442,11 +454,20 @@ export function draw(g, t) {
   const sc = SC[si], lt = t - sc.a, last = si === SC.length - 1, V = makeV(sc, lt, last);
   const P = k => LEAD + (PARTS[sc.id][Math.min(k, PARTS[sc.id].length - 1)] ?? 0);
   const L = LAYER.getContext('2d'); L.clearRect(0, 0, W, H);
-  L.save(); const z = 0.92 * (1 + 0.03 * ss(0, sc.b - sc.a, lt)); L.translate(540, 1090); L.scale(z, z); L.translate(-540, -830);
+  TNOW = t;
+  const len = sc.b - sc.a, cu = eio(lt / len), mv = sc.n % 4;
+  let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
+  const zc = [lerp(0.90, 0.95, cu), 0.93, lerp(0.96, 0.91, cu), 0.93][mv] * (1 + 0.016 * punch);
+  const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
+  L.save(); L.translate(540 + pxo, 1090 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
   sc.art(L, lt, V, P, t, last); L.restore();
   L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.5; const sp = L.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate((si * 97) % 512, (si * 61) % 512)); L.fillStyle = sp; L.fillRect(0, 0, W, H); L.restore();
   g.drawImage(LAYER, 0, 0);
   captions(g, sc, t, V);
+  const ACC = [C.orange, C.blue, C.mustard, C.teal, C.red, C.green];
+  const IR = 0.42, RMAX = 1150;
+  if (si < SC.length - 1 && lt > len - IR) { const u = eio((lt - (len - IR)) / IR); circ(g, 540, 1000, u * RMAX, ACC[si % ACC.length]); }
+  if (si > 0 && lt < IR) { const u = eio(lt / IR); g.save(); g.fillStyle = ACC[(si - 1) % ACC.length]; g.beginPath(); g.rect(0, 0, W, H); g.arc(540, 1000, u * RMAX, 0, TAU, true); g.fill('evenodd'); g.restore(); }
   g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.11;
   const gp = g.createPattern(GRAIN, 'repeat'); gp.setTransform(new DOMMatrix().translate(-Math.floor((t * 24 * 37) % 512), -Math.floor((t * 24 * 53) % 512))); g.fillStyle = gp; g.fillRect(0, 0, W, H); g.restore();
   const fade = Math.max(1 - ss(0, 0.45, t), ss(DURATION - 0.9, DURATION, t));
@@ -470,4 +491,36 @@ export function events() {
   ev.push({ t: at('S11', 0, 0.4), k: 'thud' }, { t: at('S11', 1, 1.2), k: 'motor' });
   ev.push({ t: at('S09', 2, 0.2), k: 'bell' });
   return ev.sort((a, b) => a.t - b.t);
+}
+
+// ---------------------------------------------------------------- thumbnail / cover (1080×1920; key content inside the 4:5 centre crop y 285..1635)
+export function thumb(g) {
+  textures(); TNOW = 0;
+  g.drawImage(PAPER, 0, 0);
+  const L = LAYER.getContext('2d'); L.clearRect(0, 0, W, H);
+  // big sun disc behind the hero
+  circ(L, 600, 1010, 380, C.orange); circ(L, 600, 1010, 270, '#EE7B3E');
+  // jar pyramid (the business)
+  const row = (n, y, x0) => { for (let i = 0; i < n; i++) jar(L, x0 + i * 112, y, 1.05, { label: i % 2 === 0 }); };
+  row(4, 1480, 640); row(3, 1340, 696); row(2, 1200, 752); row(1, 1060, 808);
+  // ground
+  rect(L, 0, 1480, W, 160, C.ink);
+  rect(L, 0, 1540, W, 8, C.paper);
+  // hero: Rahul, proud, holding a jar
+  person(L, 420, 1500, 2.05, { shirt: C.teal, pants: C.navy, hair: 'short', t: 0.5, armR: -2.2, armL: 0.25, mouth: 'smile',
+    hold: (gg) => { gg.rotate(2.2); jar(gg, 0, 60, 0.75, { label: 1 }); } });
+  // money sticker
+  L.save(); L.translate(870, 760); L.rotate(0.12);
+  L.fillStyle = C.mustard; L.beginPath(); for (let i = 0; i < 28; i++) { const r = i % 2 ? 150 : 178, a = i * TAU / 28; L.lineTo(Math.cos(a) * r, Math.sin(a) * r); } L.closePath(); L.fill();
+  txt(L, 'মাসে', 0, -40, F.bn(40, 700), C.ink, 'center'); txt(L, '₹৬৮,০০০', 0, 30, F.bn(64, 700), C.ink, 'center'); txt(L, 'লাভ?', 0, 88, F.bn(40, 700), C.ink, 'center');
+  L.restore();
+  // speckle print texture on the art
+  L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.45; L.fillStyle = L.createPattern(SPECK, 'repeat'); L.fillRect(0, 0, W, H); L.restore();
+  g.drawImage(LAYER, 0, 0);
+  // headline
+  txt(g, '₹১১ লাখ দিয়ে', 540, 420, F.bn(96, 700), C.ink, 'center');
+  txt(g, 'জলের ব্যবসা', 540, 540, F.bn(124, 700), C.blue, 'center');
+  rect(g, 300, 572, 480, 10, C.orange);
+  tag(g, 540, 1760, 'ছোট শহরের পুরো হিসেব', C.ink, C.cream, 46);
+  g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.11; g.fillStyle = g.createPattern(GRAIN, 'repeat'); g.fillRect(0, 0, W, H); g.restore();
 }
