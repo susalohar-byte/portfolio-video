@@ -2,13 +2,13 @@
 // 1080×1920, 24 fps. Scene timing follows the voice durations (voice/dur.json); draw(g, t) is pure.
 export const W = 1080, H = 1920, FPS = 24;
 export let DURATION = 300;
-const LEAD = 0.55, GAP = 0.85;   // visual lead before each voice line, gap between lines
+const LEAD = 0.55, GAP = 0.85, INTRO = 1.9;   // visual lead before each voice line, gap between lines
 let LINES = [], DUR = {}, PARTS = {}, WORDS = {}, SC = [];
 export function setup(lines, dur) {
   LINES = lines; DUR = dur.dur; PARTS = dur.parts; WORDS = dur.words || {};
-  let t = 0.7;
+  let t = INTRO + 0.6;
   SC = lines.map((l, i) => { const s = { ...l, n: i + 1, v: t, art: ART[l.id] }; t += DUR[l.id] + GAP; return s; });
-  SC.forEach((s, i) => { s.a = i ? s.v - LEAD : 0; });
+  SC.forEach((s, i) => { s.a = s.v - LEAD; });
   DURATION = Math.ceil((t - GAP + 2.6) * 2) / 2;
   SC.forEach((s, i) => { s.b = i + 1 < SC.length ? SC[i + 1].a : DURATION; });
 }
@@ -74,7 +74,8 @@ function person(g, x, y, s, o = {}) {
   g.save(); g.translate(x, y); g.scale(s, s);
   const w = o.walk != null ? Math.sin(o.walk) : 0, bob = o.walk != null ? Math.abs(Math.cos(o.walk)) * 4 : 0;
   const idle = o.walk == null ? 1 : 0, br = Math.sin(t * 2.1 + x * 0.01);
-  g.translate(0, -bob); if (idle) { g.translate(0, -4); g.scale(1, 1 + br * 0.012); g.translate(0, 4); }
+  g.translate(0, -bob);
+  if (idle) { const hop = (1 - Math.cos(t * 3.4 + x * 0.02)) * 0.5; g.translate(0, -hop * 7); g.scale(1 + (0.5 - hop) * 0.03, 1 - (0.5 - hop) * 0.04 + br * 0.01); }
   // legs
   if (o.sari) {
     poly(g, [[-46, -80], [46, -80], [58, 0], [-58, 0]], o.sari);
@@ -94,7 +95,7 @@ function person(g, x, y, s, o = {}) {
   arm(44, aR, true);
   // head
   rect(g, -9, -204, 18, 16, sk);
-  g.save(); g.translate(0, -204); g.rotate(idle ? Math.sin(t * 0.9 + x * 0.03) * 0.05 : 0); g.translate(0, 204);
+  g.save(); g.translate(0, -204); g.rotate(idle ? Math.sin(t * 1.1 + x * 0.03) * 0.09 : Math.sin(t * 7) * 0.04); g.translate(0, 204 - (idle ? Math.max(0, Math.sin(t * 3.4 + x * 0.02)) * 3 : 0));
   circ(g, 0, -236, 36, sk);
   const hc = o.hairc || C.ink;
   if (o.hair === 'cap') { half(g, 0, -244, 38, o.capc || C.red); rect(g, f > 0 ? 0 : -58, -248, 58, 9, o.capc || C.red); }
@@ -105,7 +106,11 @@ function person(g, x, y, s, o = {}) {
   const ex = f * 8;
   if (blink) { rect(g, ex - 16, -238, 10, 3, C.ink); rect(g, ex + 6, -238, 10, 3, C.ink); }
   else { circ(g, ex - 11, -237, 4.2, C.ink); circ(g, ex + 11, -237, 4.2, C.ink); }
-  const m = o.mouth || 'smile';
+  // brows: lift now and then (surprise / emphasis)
+  const lift = Math.max(0, Math.sin(t * 1.3 + x * 0.05)) ** 6 * 6;
+  rect(g, ex - 18, -252 - lift, 13, 3.5, C.ink); rect(g, ex + 5, -252 - lift, 13, 3.5, C.ink);
+  let m = o.mouth || 'smile';
+  if (m === 'smile' && ((t + x * 0.01) % 4.2) < 0.5) m = 'o';
   if (m === 'smile') half(g, ex, -222, 9, C.ink, 0, Math.PI);
   else if (m === 'o') circ(g, ex, -218, 6, C.ink);
   else if (m === 'sad') { g.strokeStyle = C.ink; g.lineWidth = 3.5; g.beginPath(); g.arc(ex, -210, 9, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); }
@@ -205,7 +210,7 @@ ART.S02 = (g, lt, V, P, t) => {
   pop(g, V(P(1) + 0.1), 800, 1040, () => { jar(g, 800, 1150, 1.4, { c: C.sky, label: 1 }); tag(g, 800, 900, '₹ ₹ ₹', C.red, C.cream, 40); });
   // the idea
   pop(g, V(P(2) + 0.1), 540, 600, () => { circ(g, 600, 740, 60, C.mustard); rect(g, 582, 792, 36, 26, C.ink); for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + lt * 0.4; stroke(g, [[600 + Math.cos(a) * 80, 740 + Math.sin(a) * 80], [600 + Math.cos(a) * 104, 740 + Math.sin(a) * 104]], C.mustard, 8); } });
-  pop(g, V(P(2) + 0.6), 600, 1150, () => rahul(g, 600, 1150, 0.9, { t, armR: -2.5, mouth: 'o' }), 'up');
+  if (V(P(2) + 0.2) > 0) { const u = eio((lt - P(2) - 0.2) / 1.3), wx = lerp(1180, 600, u); rahul(g, wx, 1150, 0.9, { t, face: -1, walk: u < 1 ? lt * 8 : null, armR: u >= 1 ? -2.5 : undefined, mouth: u >= 1 ? 'o' : 'smile' }); }
 };
 ART.S03 = (g, lt, V, P, t) => {
   cArc(g, 540, 820, 420, -Math.PI / 2, Math.PI * 1.5, V(0, 1.2)); cross(g, 100, 470, V(0.3)); cross(g, 980, 1270, V(0.35));
@@ -292,7 +297,7 @@ ART.S08 = (g, lt, V, P, t) => {
   pop(g, V(0.6), 330, 1300, () => { for (let i = 0; i < 4; i++) jar(g, 220 + i * 74, 1300, 0.6); });
   pop(g, V(P(0) + 1.2), 330, 600, () => { tag(g, 330, 560, 'বাড়িতে ₹৩০', C.orange, C.cream, 42); tag(g, 330, 660, 'দোকানে ₹২০', C.mustard, C.ink, 42); });
   pop(g, V(P(1) + 0.1), 330, 840, () => { bigNum(g, '৫০ জার / দিন', 330, 860, 64, C.red); });
-  pop(g, V(P(2) + 0.1), 780, 1300, () => { person(g, 780, 1300, 0.85, { sari: C.purple, shirt: C.pink, hair: 'bun', skin: C.skin2, t, face: -1, mouth: 'flat', armR: -0.6 }); bubbleSay(g, 760, 900, 380, 110, 'জল কিনব কেন?', C.cream, 1); }, 'up');
+  if (V(P(2)) > 0) { const u = eio((lt - P(2)) / 1.1), wx = lerp(1200, 780, u); person(g, wx, 1300, 0.85, { sari: C.purple, shirt: C.pink, hair: 'bun', skin: C.skin2, t, face: -1, walk: u < 1 ? lt * 8 : null, mouth: 'flat', armR: u >= 1 ? -0.6 + Math.sin(lt * 3) * 0.3 : undefined }); pop(g, V(P(2) + 1.0), 760, 900, () => bubbleSay(g, 760, 900, 380, 110, 'জল কিনব কেন?', C.cream, 1)); }
   pop(g, V(P(3) + 0.1), 820, 640, () => { g.save(); g.globalAlpha = 1; jar(g, 820, 700, 0.9, { c: '#9CC3D6' }); tag(g, 820, 530, '₹১৫', C.ink, C.cream, 40); g.save(); g.translate(820, 640); g.rotate(-0.25); g.strokeStyle = C.red; g.lineWidth = 6; g.strokeRect(-130, -36, 260, 72); txt(g, 'লাইসেন্স নেই', 0, 12, F.bn(32, 700), C.red, 'center'); g.restore(); g.restore(); });
 };
 ART.S09 = (g, lt, V, P, t) => {
@@ -389,7 +394,7 @@ ART.S15 = (g, lt, V, P, t) => {
 ART.S16 = (g, lt, V, P, t, last) => {
   pop(g, V(0.1, 0.8), 540, 960, () => { sunDisc(g, 540, 960, 380, t); });
   ground(g, 1282, V(0.2, 0.7));
-  pop(g, V(0.3), 540, 1280, () => rahul(g, 540, 1280, 1.3, { t, armR: -2.6 + Math.sin(lt * 5) * 0.3, hold: null, mouth: 'smile' }), 'up');
+  if (V(0.2) > 0) { const u = eio((lt - 0.2) / 1.4), wx = lerp(-160, 540, u); rahul(g, wx, 1280, 1.3, { t, walk: u < 1 ? lt * 8 : null, armR: u >= 1 ? -2.6 + Math.sin(lt * 6) * 0.35 : undefined, mouth: 'smile' }); }
   pop(g, V(0.6), 300, 1280, () => jar(g, 300, 1280, 1.3, { label: 1 }));
   pop(g, V(0.8), 800, 1280, () => rickshaw(g, 780, 1280, 0.45, 6));
   pop(g, V(P(1) + 0.1), 540, 620, () => { bubbleSay(g, 540, 620, 560, 120, 'কোন ব্যবসা? কমেন্টে লিখুন', C.orange, 0); });
@@ -428,9 +433,9 @@ function makeV(sc, lt, last) {
   const len = sc.b - sc.a;
   return (d, dur = 0.55) => {
     const inU = clamp((lt - d) / dur);
+    if (last === 'hold') return inU;
     if (last) return inU * (1 - ss(len - 1.0, len - 0.2, lt));
-    const ex = clamp((lt - (len - EXIT) - Math.min(Math.max(d, 0), 3) * 0.03) / 0.34);
-    return inU * (1 - eio(ex));
+    return inU;
   };
 }
 const DOTS = [C.orange, C.mustard, C.blue, C.ink];
@@ -480,7 +485,7 @@ function captions(g, sc, t, V) {
   // headline (top) with a pen stroke under it
   const tv = V(0.25, 0.6);
   if (tv > 0) {
-    g.save(); g.globalAlpha = clamp(tv * 2); g.font = F.head(sc.title.length > 14 ? 76 : 88); const tw = g.measureText(sc.title).width;
+    g.save(); g.globalAlpha *= clamp(tv * 2); g.font = F.head(sc.title.length > 14 ? 76 : 88); const tw = g.measureText(sc.title).width;
     txt(g, sc.title, 540, 330 + (1 - eo(tv)) * 24, F.head(sc.title.length > 14 ? 76 : 88), C.ink, 'center');
     penLine(g, 540, 372, Math.min(820, tw * 0.9 + 60), clamp((t - sc.a - 0.45) / 0.55), sc.n * 7);
     g.restore();
@@ -497,12 +502,20 @@ function captions(g, sc, t, V) {
     // width = words spoken so far (the newest one eases in), the paper grows with it and reveals the word
     const vw = c.words.reduce((a, wd, j) => a + (wd.w + (j ? c.sp : 0)) * wus[j], 0);
     const e = back(inU, 1.5);
-    g.save(); g.globalAlpha = vis;
-    g.translate(540, 1478 + (1 - e) * 30); g.rotate(c.rot + (1 - e) * 0.05); g.scale(lerp(0.9, 1, e), lerp(0.75, 1, e));
-    paperCut(g, vw + 84, 104, c.seed, acc);
-    g.beginPath(); g.rect(-vw / 2 - 6, -60, vw + 12, 120); g.clip();
+    g.save(); g.globalAlpha *= vis;
+    g.translate(540, 1478 + (1 - e) * 30 + Math.sin(TNOW * 2.2) * 2); g.rotate(c.rot + (1 - e) * 0.05); g.scale(lerp(0.9, 1, e), lerp(0.75, 1, e));
+    paperCut(g, vw + 92, 112, c.seed, acc);
+    g.beginPath(); g.rect(-vw / 2 - 10, -64, vw + 20, 128); g.clip();
+    // which word is being said right now
+    let cur = -1; c.words.forEach((wd, j) => { if (wus[j] > 0) cur = j; });
     let x = -vw / 2;
-    c.words.forEach((wd, j) => { if (wus[j] <= 0) return; if (j) x += c.sp; txt(g, wd.s, x, 18, F.cap(52, 700), wd.hi ? (acc === C.mustard ? C.terra : acc) : C.ink); x += wd.w; });
+    c.words.forEach((wd, j) => {
+      if (wus[j] <= 0) return; if (j) x += c.sp;
+      if (j === cur && ci2(c, j)) { const u = eo(clamp((TNOW - wd.t) / 0.22)); g.save(); g.globalAlpha *= 0.55; g.translate(x - 8, 30); g.transform(1, 0, -0.18, 1, 0, 0); rrect(g, 0, -36, (wd.w + 16) * u, 30, 10, C.mustard); g.restore(); }
+      const pop = 1 + (1 - eo(clamp((TNOW - wd.t) / 0.2))) * 0.18;
+      g.save(); g.translate(x + wd.w / 2, 14); g.scale(pop, pop); txt(g, wd.s, -wd.w / 2, 0, F.cap(52, 700), wd.hi ? (acc === C.mustard ? C.terra : acc) : C.ink); g.restore();
+      x += wd.w;
+    });
     g.restore();
   };
   const c = CH[ci], wus = c.words.map(wd => eo(clamp((t - wd.t) / 0.18)));
@@ -510,6 +523,7 @@ function captions(g, sc, t, V) {
   if (vw < 60 && ci > 0 && CH[ci - 1].t0 > c.t0 - 8) draw1(CH[ci - 1], CH[ci - 1].words.map(() => 1), 1);
   else if (vw >= 2) draw1(c, wus, clamp((t - c.t0) / 0.3));
 }
+const ci2 = (c, j) => TNOW - c.words[j].t < 0.9;   // highlight only while the word is fresh
 // two-layer paper cut: coloured paper behind, cream paper with scissor-cut edges in front
 function paperCut(g, w, h, seed, acc) {
   const R = rng(seed);
@@ -546,31 +560,64 @@ function chunksFor(g, sc) {
   g.restore();
   return (CHUNKS[sc.id] = out);
 }
+let LAYERB = null;
+// draw scene si (or the intro when si < 0) at time t into ctx; hold = keep everything on screen (outgoing scene)
+function sceneInto(ctx, si, t, hold) {
+  ctx.clearRect(0, 0, W, H);
+  if (si < 0) { introArt(ctx, t); }
+  else {
+    const sc = SC[si], lt = t - sc.a, last = si === SC.length - 1, V = makeV(sc, lt, hold ? 'hold' : last);
+    const P = k => LEAD + (PARTS[sc.id][Math.min(k, PARTS[sc.id].length - 1)] ?? 0);
+    const len = sc.b - sc.a, cu = eio(clamp(lt / len)), mv = sc.n % 4;
+    let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
+    const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
+    const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
+    ctx.save(); ctx.translate(540 + pxo, 930 + pyo); ctx.scale(zc, zc); ctx.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); ctx.translate(-540, -830);
+    ambient(ctx, t, si, V(0.1, 0.8)); sc.art(ctx, lt, V, P, t, last); ctx.restore();
+  }
+  ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.globalAlpha = 0.5; const sp = ctx.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate(((si + 1) * 97) % 512, ((si + 1) * 61) % 512)); ctx.fillStyle = sp; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+function overlay(g, si, t, hold) {   // headline + caption for scene si (intro has its own headline)
+  if (si < 0) { introText(g, t); return; }
+  const sc = SC[si]; captions(g, sc, t, makeV(sc, t - sc.a, hold ? 'hold' : si === SC.length - 1));
+}
+const TR = 0.75;
 export function draw(g, t) {
-  textures();
+  textures(); TNOW = t;
+  if (!LAYERB) LAYERB = new OffscreenCanvas(W, H);
   g.drawImage(PAPER, 0, 0);
-  let si = 0; SC.forEach((s, i) => { if (t >= s.a) si = i; });
-  const sc = SC[si], lt = t - sc.a, last = si === SC.length - 1, V = makeV(sc, lt, last);
-  const P = k => LEAD + (PARTS[sc.id][Math.min(k, PARTS[sc.id].length - 1)] ?? 0);
-  const L = LAYER.getContext('2d'); L.clearRect(0, 0, W, H);
-  TNOW = t;
-  const len = sc.b - sc.a, cu = eio(lt / len), mv = sc.n % 4;
-  let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
-  const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
-  const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
-  L.save(); L.translate(540 + pxo, 930 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
-  ambient(L, t, si, V(0.1, 0.8)); sc.art(L, lt, V, P, t, last); L.restore();
-  L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.5; const sp = L.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate((si * 97) % 512, (si * 61) % 512)); L.fillStyle = sp; L.fillRect(0, 0, W, H); L.restore();
-  g.drawImage(LAYER, 0, 0);
-  captions(g, sc, t, V);
-  const ACC = [C.orange, C.blue, C.mustard, C.teal, C.red, C.green];
-  const IR = 0.42, RMAX = 1150;
-  if (si < SC.length - 1 && lt > len - IR) { const u = eio((lt - (len - IR)) / IR); circ(g, 540, 1000, u * RMAX, ACC[si % ACC.length]); }
-  if (si > 0 && lt < IR) { const u = eio(lt / IR); g.save(); g.fillStyle = ACC[(si - 1) % ACC.length]; g.beginPath(); g.rect(0, 0, W, H); g.arc(540, 1000, u * RMAX, 0, TAU, true); g.fill('evenodd'); g.restore(); }
+  let si = -1; SC.forEach((s, i) => { if (t >= s.a) si = i; });
+  const start = si < 0 ? 0 : SC[si].a, u = si < 0 ? 1 : eio(clamp((t - start) / TR));
+  if (u < 1) {   // outgoing: drifts left, shrinks a touch and fades
+    sceneInto(LAYERB.getContext('2d'), si - 1, t, true);
+    g.save(); g.globalAlpha = 1 - u; g.translate(540 - 110 * u, 960); g.scale(1 - 0.04 * u, 1 - 0.04 * u); g.translate(-540, -960); g.drawImage(LAYERB, 0, 0); overlay(g, si - 1, t, true); g.restore();
+  }
+  sceneInto(LAYER.getContext('2d'), si, t, false);
+  g.save(); g.globalAlpha = u; g.translate(110 * (1 - u), 0); g.drawImage(LAYER, 0, 0); g.restore();
+  g.save(); g.globalAlpha = u; overlay(g, si, t, false); g.restore();
   g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.11;
   const gp = g.createPattern(GRAIN, 'repeat'); gp.setTransform(new DOMMatrix().translate(-Math.floor((t * 24 * 37) % 512), -Math.floor((t * 24 * 53) % 512))); g.fillStyle = gp; g.fillRect(0, 0, W, H); g.restore();
-  const fade = Math.max(1 - ss(0, 0.45, t), ss(DURATION - 0.9, DURATION, t));
+  const fade = ss(DURATION - 0.9, DURATION, t);
   if (fade > 0) { g.fillStyle = `rgba(236,229,216,${fade})`; g.fillRect(0, 0, W, H); }
+}
+
+// animated cover (first ~2 s): Rahul with the jar business and the hook headline
+function introArt(L, t) {
+  sunDisc(L, 600, 1010, 380, t);
+  const row = (n, y, x0, r) => { for (let i = 0; i < n; i++) { const b = Math.abs(Math.sin(t * 3 + i + r)) * 8; jar(L, x0 + i * 112, y - b * (r === 0 ? 0 : 1), 1.05, { label: i % 2 === 0 }); } };
+  row(4, 1480, 640, 0); row(3, 1340, 696, 1); row(2, 1200, 752, 2); row(1, 1060, 808, 3);
+  rect(L, 0, 1480, W, 6, C.ink);
+  person(L, 420, 1480, 2.05, { shirt: C.teal, pants: C.navy, hair: 'short', t: t + 0.3, armR: -2.2 + Math.sin(t * 4) * 0.12, armL: 0.25, mouth: 'smile',
+    hold: (gg) => { gg.rotate(2.2); jar(gg, 0, 60, 0.75, { label: 1 }); } });
+  L.save(); L.translate(870, 760); L.rotate(0.12 + Math.sin(t * 2.5) * 0.06); const k = 1 + Math.sin(t * 5) * 0.04; L.scale(k, k);
+  L.fillStyle = C.mustard; L.beginPath(); for (let i = 0; i < 28; i++) { const r = i % 2 ? 150 : 178, a = i * TAU / 28 + t * 0.3; L.lineTo(Math.cos(a) * r, Math.sin(a) * r); } L.closePath(); L.fill();
+  txt(L, 'মাসে', 0, -40, F.bn(40, 700), C.ink, 'center'); txt(L, '₹৬৮,০০০', 0, 30, F.bn(64, 700), C.ink, 'center'); txt(L, 'লাভ?', 0, 88, F.bn(40, 700), C.ink, 'center');
+  L.restore();
+}
+function introText(g, t) {
+  txt(g, '₹১১ লাখ দিয়ে', 540, 420, F.bn(96, 700), C.ink, 'center');
+  txt(g, 'জলের ব্যবসা', 540, 545, F.head(140), C.blue, 'center');
+  penLine(g, 540, 590, 520, clamp(0.35 + t / 0.8), 5);
 }
 
 // sound events for the mixer
