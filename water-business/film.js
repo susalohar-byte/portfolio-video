@@ -20,7 +20,7 @@ const C = {
   red: '#C23B2E', green: '#56794A', pink: '#E7B49B', cream: '#F7F2E8', marble: '#DCD4C4', shade: '#B9AE99', rust: '#A5532B',
   terra: '#B0502F', gray: '#8C877E', navy: '#2B3A55', skin: '#C68A5B', skin2: '#A86F48', purple: '#6E4C8F', line: 'rgba(31,29,27,0.38)',
 };
-const F = { mono: (px, w = 500) => `${w} ${px}px Plex`, bn: (px, w = 600) => `${w} ${px}px Hind`, head: px => `${px}px Galada`, cap: (px, w = 600) => `${w} ${px}px Baloo` };
+const F = { mono: (px, w = 500) => `${w} ${px}px Plex`, bn: (px, w = 600) => `${w} ${px}px Hind`, head: px => `700 ${px}px Atma`, cap: (px, w = 700) => `700 ${px}px Anek` };
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const lerp = (a, b, u) => a + (b - a) * u;
 const ss = (a, b, x) => { const u = clamp((x - a) / (b - a)); return u * u * (3 - 2 * u); };
