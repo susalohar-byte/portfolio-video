@@ -3,9 +3,9 @@
 export const W = 1080, H = 1920, FPS = 24;
 export let DURATION = 300;
 const LEAD = 0.55, GAP = 0.85;   // visual lead before each voice line, gap between lines
-let LINES = [], DUR = {}, PARTS = {}, SC = [];
+let LINES = [], DUR = {}, PARTS = {}, WORDS = {}, SC = [];
 export function setup(lines, dur) {
-  LINES = lines; DUR = dur.dur; PARTS = dur.parts;
+  LINES = lines; DUR = dur.dur; PARTS = dur.parts; WORDS = dur.words || {};
   let t = 0.7;
   SC = lines.map((l, i) => { const s = { ...l, n: i + 1, v: t, art: ART[l.id] }; t += DUR[l.id] + GAP; return s; });
   SC.forEach((s, i) => { s.a = i ? s.v - LEAD : 0; });
@@ -535,7 +535,7 @@ function chunksFor(g, sc) {
     let acc = 0, cur = [];
     const flush = () => { if (!cur.length) return; const w = cur.reduce((a, x) => a + x.w, 0) + sp * (cur.length - 1); const seed = sc.n * 97 + out.length * 13; out.push({ t0: cur[0].t - 0.05, words: cur, w, sp, seed, rot: ((seed % 5) - 2) * 0.008 }); cur = []; };
     ws.forEach((w, i) => {
-      const ww = g.measureText(w).width, wtime = p0 + (p1 - p0) * acc / tot; acc += wt[i];
+      const wl = WORDS[sc.id] && WORDS[sc.id][k], ww = g.measureText(w).width, wtime = wl && wl[i] != null ? sc.v + wl[i] : p0 + (p1 - p0) * acc / tot; acc += wt[i];
       const curW = cur.reduce((a, x) => a + x.w, 0) + sp * cur.length;
       if (cur.length && (curW + ww > 760 || cur.length >= 5)) flush();
       cur.push({ s: w, w: ww, t: wtime, hi: /[০-৯\d]/.test(w) || /টাকা|লাখ|হাজার/.test(w) });
