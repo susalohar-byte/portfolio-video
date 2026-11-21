@@ -53,9 +53,9 @@ function pop(g, v, px, py, fn, mode = 's') {
   if (v <= 0.001) return;
   g.save(); g.translate(px, py);
   if (mode === 's') { const k = back(v, 1.5), ph = px * 0.013 + py * 0.007; g.translate(0, Math.sin(TNOW * 1.7 + ph) * 5 * v); g.rotate((1 - eo(v)) * 0.25 * Math.sin(ph * 3) + Math.sin(TNOW * 1.3 + ph) * 0.012 * v); g.scale(k, k); }
-  else if (mode === 'y') g.scale(1, eo(v));
+  else if (mode === 'y') { const ph = px * 0.011; g.scale(1 - Math.sin(TNOW * 2.2 + ph) * 0.006 * v, eo(v) * (1 + Math.sin(TNOW * 2.2 + ph) * 0.012 * v)); }
   else if (mode === 'x') g.scale(eo(v), 1);
-  else if (mode === 'up') g.translate(0, (1 - eo(v)) * 140);
+  else if (mode === 'up') { const ph = px * 0.011; g.translate(0, (1 - eo(v)) * 140); g.scale(1, 1 + Math.sin(TNOW * 2.4 + ph) * 0.01 * v); }
   else if (mode === 'drop') g.translate(0, -(1 - back(v, 1.2)) * 900);
   else if (mode === 'left') g.translate(-(1 - eo(v)) * 1200, 0);
   else if (mode === 'right') g.translate((1 - eo(v)) * 1200, 0);
@@ -85,6 +85,7 @@ function person(g, x, y, s, o = {}) {
   // arms (behind body for the far one)
   const arm = (sx, ang, front) => { g.save(); g.translate(sx, -176); g.rotate(ang); rrect(g, -11, -6, 22, 92, 11, front ? sh : mixc(sh, '#000000', 0.15)); circ(g, 0, 90, 12, sk); if (front && o.hold) { g.translate(0, 96); o.hold(g); } g.restore(); };
   const sway = idle ? Math.sin(t * 1.6 + x * 0.02) * 0.07 : 0;
+  if (idle && o.armR == null) { const cyc = (t + x * 0.003) % 5.5, wave = cyc < 1.6 ? Math.sin(Math.PI * cyc / 1.6) : 0; o = { ...o, armR: -2.3 * eo(wave * 1.4) + Math.sin(t * 14) * 0.25 * wave }; }
   const aL = (o.armL ?? 0) + (o.walk != null ? w * 0.5 : 0) + sway, aR = (o.armR ?? 0) - (o.walk != null ? w * 0.5 : 0) - sway;
   arm(-44, aL, false);
   // body
@@ -127,7 +128,12 @@ function jar(g, x, y, s = 1, o = {}) { // y = bottom
   if (o.label) { rect(g, -26, -70, 52, 30, C.cream); rect(g, -18, -62, 36, 4, C.ink); rect(g, -18, -52, 24, 4, C.ink); }
   g.restore();
 }
-function house(g, x, y, w, h, c, roof = C.terra, door = C.ink) { rect(g, x, y - h, w, h, c); poly(g, [[x - 12, y - h], [x + w / 2, y - h - w * 0.45], [x + w + 12, y - h]], roof); arch(g, x + w / 2 - 18, y - 70, 36, 70, door); rect(g, x + 14, y - h + 26, 30, 30, C.cream); if (w > 120) rect(g, x + w - 44, y - h + 26, 30, 30, C.cream); }
+function house(g, x, y, w, h, c, roof = C.terra, door = C.ink) {
+  const lit = k => Math.sin(TNOW * 0.9 + x * 0.37 + k * 2.1) > 0.35 ? C.mustard : C.cream;
+  if (w > 100) { const cx = x + w * 0.72, cy = y - h - w * 0.3; rect(g, cx, cy, 18, w * 0.22, C.ink);
+    for (let i = 0; i < 3; i++) { const ph = (TNOW * 0.45 + i / 3 + x * 0.01) % 1; g.globalAlpha *= 1; const a = Math.sin(ph * Math.PI) * 0.7; g.save(); g.globalAlpha *= a; circ(g, cx + 9 + Math.sin(ph * 6 + i) * 8, cy - 10 - ph * 70, 8 + ph * 12, C.cream); g.restore(); } }
+  rect(g, x, y - h, w, h, c); poly(g, [[x - 12, y - h], [x + w / 2, y - h - w * 0.45], [x + w + 12, y - h]], roof); arch(g, x + w / 2 - 18, y - 70, 36, 70, door);
+  rect(g, x + 14, y - h + 26, 30, 30, lit(0)); if (w > 120) rect(g, x + w - 44, y - h + 26, 30, 30, lit(1)); }
 function shop(g, x, y, w, h, c) { rect(g, x, y - h, w, h, c); for (let i = 0; i < 5; i++) rect(g, x - 8 + i * (w + 16) / 5, y - h - 30, (w + 16) / 5, 30, i % 2 ? C.cream : C.red); rect(g, x + 16, y - h + 50, w - 32, h - 50, C.ink); rect(g, x + 26, y - h + 60, w - 52, 22, C.mustard); }
 function coin(g, x, y, r = 34, c = C.mustard) { circ(g, x, y, r, c); g.strokeStyle = 'rgba(31,29,27,0.35)'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, r * 0.75, 0, TAU); g.stroke(); txt(g, '₹', x, y + r * 0.36, F.bn(r, 700), C.ink, 'center'); }
 function coinStack(g, x, y, n, c = C.mustard) { for (let i = 0; i < n; i++) { rrect(g, x - 46, y - (i + 1) * 16, 92, 16, 6, i % 2 ? c : mixc(c, '#000000', 0.12)); } }
@@ -170,8 +176,14 @@ function flask(g, x, y, s, c = C.teal) { g.save(); g.translate(x, y); g.scale(s,
 
 // ---------------------------------------------------------------- scenes  (art area ≈ y 320..1340)
 const ART = {};
+function sunDisc(g, x, y, r, t) {
+  g.save(); g.translate(x, y); g.rotate(t * 0.12);
+  for (let i = 0; i < 24; i++) { g.rotate(TAU / 24); const L = 26 + Math.sin(t * 2.5 + i) * 10; rrect(g, r + 18, -6, L, 12, 6, C.orange); }
+  g.restore();
+  const k = 1 + Math.sin(t * 1.8) * 0.015; circ(g, x, y, r * k, C.orange); circ(g, x, y, r * 0.7 * (1 + Math.sin(t * 1.8 + 1) * 0.02), '#EE7B3E');
+}
 ART.S01 = (g, lt, V, P, t) => {
-  pop(g, V(0.2, 0.8), 540, 900, () => { circ(g, 540, 900, 360, C.orange); circ(g, 540, 900, 250, '#EE7B3E'); });
+  pop(g, V(0.2, 0.8), 540, 900, () => { sunDisc(g, 540, 900, 360, t); });
   const HS = [[80, 160, 230, C.pink, C.terra], [250, 140, 300, C.mustard, C.red], [400, 170, 220, C.marble, C.teal], [580, 150, 280, C.pink, C.navy], [740, 180, 240, C.mustard, C.terra]];
   HS.forEach(([x, w, h, c, r], i) => pop(g, V(0.4 + i * 0.1, 0.6), x + w / 2, 1282, () => house(g, x, 1282, w, h, c, r), 'y'));
   ground(g, 1282, V(0.5, 0.7));
@@ -375,7 +387,7 @@ ART.S15 = (g, lt, V, P, t) => {
   pop(g, V(P(1) + 0.2), 300, 1080, () => { coinStack(g, 220, 1150, 10, C.mustard); txt(g, inr(Math.round(465000 * eo((lt - P(1) - 0.2) / 1.6) / 1000) * 1000), 300, 1060, F.bn(40, 700), C.ink); txt(g, 'নিজের টাকা ফেরত', 300, 1100, F.bn(28, 600), C.green); });
 };
 ART.S16 = (g, lt, V, P, t, last) => {
-  pop(g, V(0.1, 0.8), 540, 960, () => { circ(g, 540, 960, 380, C.orange); circ(g, 540, 960, 270, '#EE7B3E'); });
+  pop(g, V(0.1, 0.8), 540, 960, () => { sunDisc(g, 540, 960, 380, t); });
   ground(g, 1282, V(0.2, 0.7));
   pop(g, V(0.3), 540, 1280, () => rahul(g, 540, 1280, 1.3, { t, armR: -2.6 + Math.sin(lt * 5) * 0.3, hold: null, mouth: 'smile' }), 'up');
   pop(g, V(0.6), 300, 1280, () => jar(g, 300, 1280, 1.3, { label: 1 }));
@@ -383,6 +395,15 @@ ART.S16 = (g, lt, V, P, t, last) => {
   pop(g, V(P(1) + 0.1), 540, 620, () => { bubbleSay(g, 540, 620, 560, 120, 'কোন ব্যবসা? কমেন্টে লিখুন', C.orange, 0); });
 };
 
+function ambient(g, t, si, v) {
+  if (v <= 0) return;
+  g.save(); g.globalAlpha *= v * 0.9;
+  const cl = (x, y, s) => { g.save(); g.translate(x, y); g.scale(s, s); rrect(g, -70, -18, 140, 36, 18, '#F4EEE2'); circ(g, -20, -22, 30, '#F4EEE2'); circ(g, 22, -14, 22, '#F4EEE2'); g.restore(); };
+  cl(((t * 14 + si * 300) % 1400) - 180, 470, 1.1); cl(((t * 9 + si * 520 + 700) % 1400) - 180, 560, 0.8);
+  const bx = ((t * 40 + si * 211) % 1600) - 300;
+  for (let i = 0; i < 3; i++) { const x = bx + i * 46, y = 520 + i * 18 + Math.sin(t * 2 + i) * 6, f = Math.sin(t * 9 + i) * 7; g.strokeStyle = C.ink; g.lineWidth = 3.5; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 14, y - f); g.quadraticCurveTo(x - 6, y - 8, x, y); g.quadraticCurveTo(x + 6, y - 8, x + 14, y - f); g.stroke(); }
+  g.restore();
+}
 // ---------------------------------------------------------------- textures
 let GRAIN, SPECK, PAPER, LAYER;
 function textures() {
@@ -538,7 +559,7 @@ export function draw(g, t) {
   const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
   const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
   L.save(); L.translate(540 + pxo, 930 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
-  sc.art(L, lt, V, P, t, last); L.restore();
+  ambient(L, t, si, V(0.1, 0.8)); sc.art(L, lt, V, P, t, last); L.restore();
   L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.5; const sp = L.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate((si * 97) % 512, (si * 61) % 512)); L.fillStyle = sp; L.fillRect(0, 0, W, H); L.restore();
   g.drawImage(LAYER, 0, 0);
   captions(g, sc, t, V);
