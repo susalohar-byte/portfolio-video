@@ -5,6 +5,9 @@
 সংখ্যা ও উৎস: `FACTS.md` (অনুমানভিত্তিক উদাহরণ)।
 
 ## Build
+
+Music + SFX: `./fetch_audio.sh` (Mixkit, free licence; not committed). Story acts: Discover → Piano Reflections (first month) → Dreaming Big (the turn) → Silent Descent (problems) → Driving Ambition (growth).
+
 ```sh
 GEMINI_API_KEY=... python3 tts_gemini.py          # voice/S01..S16.wav + voice/dur.json (Gemini TTS, voice "Charon")
 node render.mjs --still x                          # writes out/meta.json + out/events.json
