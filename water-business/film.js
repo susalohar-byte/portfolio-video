@@ -241,6 +241,45 @@ function flask(g, x, y, s, c = C.teal) { g.save(); g.translate(x, y); g.scale(s,
 
 // ---------------------------------------------------------------- scenes  (art area ≈ y 320..1340)
 const ART = {};
+// ---- soft modern backdrops (light tints), one shape per scene, gently animated
+const PAL = { peach: '#F5D5C2', mint: '#D3E6D8', sky: '#D2E2EE', butter: '#F4E4B8', lilac: '#E3D8EC', blush: '#F2D0CA', sand: '#EBDDC6' };
+const BACK = {
+  S01: ['arch', PAL.peach, 540, 1282, 640, 820], S02: ['blob', PAL.lilac, 520, 930, 380], S03: ['round', PAL.butter, 540, 900, 820, 760],
+  S04: ['arch', PAL.lilac, 540, 1330, 760, 860], S05: ['round', PAL.mint, 540, 840, 900, 980], S06: ['blob', PAL.butter, 540, 860, 400],
+  S07: ['round', PAL.sky, 540, 900, 900, 860], S08: ['blob', PAL.blush, 560, 960, 400], S09: ['arch', PAL.mint, 540, 1180, 820, 780],
+  S10: ['blob', PAL.lilac, 540, 880, 410], S11: ['arch', PAL.sand, 470, 1330, 700, 800], S12: ['wave', PAL.mint, 540, 860, 960, 700],
+  S13: ['round', PAL.peach, 540, 880, 900, 900], S14: ['split', PAL.peach, 540, 830, 920, 760], S15: ['arch', PAL.butter, 540, 1180, 860, 860],
+  S16: ['blob', PAL.peach, 540, 960, 420], INTRO: ['arch', PAL.peach, 600, 1480, 700, 900],
+};
+function backdrop(g, key, t, v) {
+  const b = BACK[key]; if (!b || v <= 0) return;
+  const [kind, col, x, y] = b, k = eo(v);
+  g.save(); g.globalAlpha *= clamp(v * 1.5);
+  if (kind === 'blob') {
+    const r = b[4] * lerp(0.6, 1, k); g.fillStyle = col; g.beginPath();
+    for (let i = 0; i <= 64; i++) { const a = i / 64 * TAU, rr = r * (1 + 0.07 * Math.sin(a * 3 + t * 0.9) + 0.05 * Math.sin(a * 5 - t * 1.3)); g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.92); }
+    g.closePath(); g.fill();
+  } else if (kind === 'arch') {
+    const w = b[4] * lerp(0.8, 1, k), h = b[5] * k * (1 + Math.sin(t * 1.2) * 0.006);
+    g.fillStyle = col; g.beginPath(); g.moveTo(x - w / 2, y); g.lineTo(x - w / 2, y - h + w / 2); g.arc(x, y - h + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, y); g.closePath(); g.fill();
+  } else if (kind === 'round') {
+    const w = b[4] * lerp(0.85, 1, k), h = b[5] * lerp(0.85, 1, k);
+    g.translate(x, y); g.rotate(Math.sin(t * 0.5) * 0.012); rrect(g, -w / 2, -h / 2, w, h, 90, col);
+  } else if (kind === 'wave') {
+    const w = b[4], h = b[5] * k; g.fillStyle = col; g.beginPath(); g.moveTo(x - w / 2, y + h / 2);
+    for (let i = 0; i <= 40; i++) { const u = i / 40; g.lineTo(x - w / 2 + w * u, y - h / 2 + Math.sin(u * 7 + t * 1.2) * 22); }
+    g.lineTo(x + w / 2, y + h / 2); g.closePath(); g.fill();
+  } else if (kind === 'split') {
+    rrect(g, x - b[4] / 2, y - b[5] / 2 - 30, b[4], b[5] / 2, 70, PAL.peach); rrect(g, x - b[4] / 2, y + 20, b[4], b[5] / 2, 70, PAL.sky);
+  }
+  // a few small modern accents (dots / rings) floating around the shape
+  const R = rng(key.charCodeAt(1) * 31 + key.charCodeAt(2));
+  for (let i = 0; i < 5; i++) {
+    const ax = x + (R() - 0.5) * 900, ay = y + (R() - 0.5) * 760 + Math.sin(t * 1.4 + i) * 10, r = 6 + R() * 10;
+    if (i % 2) circ(g, ax, ay, r * k, mixc(col, '#000000', 0.12)); else { g.strokeStyle = mixc(col, '#000000', 0.18); g.lineWidth = 4; g.beginPath(); g.arc(ax, ay, r * 1.3 * k, 0, TAU); g.stroke(); }
+  }
+  g.restore();
+}
 function sunDisc(g, x, y, r, t) {
   g.save(); g.translate(x, y); g.rotate(t * 0.12);
   for (let i = 0; i < 24; i++) { g.rotate(TAU / 24); const L = 26 + Math.sin(t * 2.5 + i) * 10; rrect(g, r + 18, -6, L, 12, 6, C.orange); }
@@ -248,7 +287,7 @@ function sunDisc(g, x, y, r, t) {
   const k = 1 + Math.sin(t * 1.8) * 0.015; circ(g, x, y, r * k, C.orange); circ(g, x, y, r * 0.7 * (1 + Math.sin(t * 1.8 + 1) * 0.02), '#EE7B3E');
 }
 ART.S01 = (g, lt, V, P, t) => {
-  pop(g, V(0.2, 0.8), 540, 900, () => { sunDisc(g, 540, 900, 360, t); });
+  
   const HS = [[80, 160, 230, C.pink, C.terra], [250, 140, 300, C.mustard, C.red], [400, 170, 220, C.marble, C.teal], [580, 150, 280, C.pink, C.navy], [740, 180, 240, C.mustard, C.terra]];
   HS.forEach(([x, w, h, c, r], i) => pop(g, V(0.4 + i * 0.1, 0.6), x + w / 2, 1282, () => house(g, x, 1282, w, h, c, r), 'y'));
   ground(g, 1282, V(0.5, 0.7));
@@ -452,7 +491,7 @@ ART.S15 = (g, lt, V, P, t) => {
   pop(g, V(P(1) + 0.2), 300, 1080, () => { coinStack(g, 220, 1150, 10, C.mustard); txt(g, inr(Math.round(465000 * eo((lt - P(1) - 0.2) / 1.6) / 1000) * 1000), 300, 1060, F.bn(40, 700), C.ink); txt(g, 'নিজের টাকা ফেরত', 300, 1100, F.bn(28, 600), C.green); });
 };
 ART.S16 = (g, lt, V, P, t, last) => {
-  pop(g, V(0.1, 0.8), 540, 960, () => { sunDisc(g, 540, 960, 380, t); });
+  
   ground(g, 1282, V(0.2, 0.7));
   if (V(0.2) > 0) { const u = eio((lt - 0.2) / 1.4), wx = lerp(-160, 540, u); rahul(g, wx, 1280, 1.3, { t, walk: u < 1 ? lt * 8 : null, armR: u >= 1 ? -2.6 + Math.sin(lt * 6) * 0.35 : undefined, mouth: 'smile' }); }
   pop(g, V(0.6), 300, 1280, () => jar(g, 300, 1280, 1.3, { label: 1 }));
@@ -633,7 +672,7 @@ function sceneInto(ctx, si, t, hold) {
     const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
     const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
     ctx.save(); ctx.translate(540 + pxo, 930 + pyo); ctx.scale(zc, zc); ctx.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); ctx.translate(-540, -830);
-    ambient(ctx, t, si, V(0.1, 0.8)); sc.art(ctx, lt, V, P, t, last); ctx.restore();
+    backdrop(ctx, sc.id, t, V(0.05, 0.7)); ambient(ctx, t, si, V(0.1, 0.8)); sc.art(ctx, lt, V, P, t, last); ctx.restore();
   }
   ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.globalAlpha = 0.5; const sp = ctx.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate(((si + 1) * 97) % 512, ((si + 1) * 61) % 512)); ctx.fillStyle = sp; ctx.fillRect(0, 0, W, H); ctx.restore();
 }
@@ -663,7 +702,7 @@ export function draw(g, t) {
 
 // animated cover (first ~2 s): Rahul with the jar business and the hook headline
 function introArt(L, t) {
-  sunDisc(L, 600, 1010, 380, t);
+  backdrop(L, 'INTRO', t, 1);
   const row = (n, y, x0, r) => { for (let i = 0; i < n; i++) { const b = Math.abs(Math.sin(t * 3 + i + r)) * 8; jar(L, x0 + i * 112, y - b * (r === 0 ? 0 : 1), 1.05, { label: i % 2 === 0 }); } };
   row(4, 1480, 640, 0); row(3, 1340, 696, 1); row(2, 1200, 752, 2); row(1, 1060, 808, 3);
   rect(L, 0, 1480, W, 6, C.ink);
@@ -705,7 +744,7 @@ export function thumb(g) {
   g.drawImage(PAPER, 0, 0);
   const L = LAYER.getContext('2d'); L.clearRect(0, 0, W, H);
   // big sun disc behind the hero
-  circ(L, 600, 1010, 380, C.orange); circ(L, 600, 1010, 270, '#EE7B3E');
+  backdrop(L, 'INTRO', 0, 1);
   // jar pyramid (the business)
   const row = (n, y, x0) => { for (let i = 0; i < n; i++) jar(L, x0 + i * 112, y, 1.05, { label: i % 2 === 0 }); };
   row(4, 1480, 640); row(3, 1340, 696); row(2, 1200, 752); row(1, 1060, 808);
