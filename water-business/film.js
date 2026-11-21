@@ -119,7 +119,67 @@ function person(g, x, y, s, o = {}) {
   g.restore();
   g.restore();
 }
-const rahul = (g, x, y, s, o = {}) => person(g, x, y, s, { shirt: C.teal, pants: C.navy, hair: 'short', ...o });
+// Rahul, 26: modern look — undercut quiff, light stubble, thin glasses, open overshirt over a tee, jeans, white sneakers, watch.
+// Same animation vocabulary as person(): walk, idle bounce with squash/stretch, waves, head tilt, blinks, brows, mouth.
+function rahul(g, x, y, s, o = {}) {
+  const sk = '#C68A5B', skD = '#A9714A', over = o.shirt && o.shirt !== C.teal ? o.shirt : '#2F6E6A', tee = C.cream, jeans = '#3E5C86', jeansD = '#33507A', f = o.face ?? 1, t = o.t ?? 0;
+  g.save(); g.translate(x, y); g.scale(s, s);
+  const w = o.walk != null ? Math.sin(o.walk) : 0, bob = o.walk != null ? Math.abs(Math.cos(o.walk)) * 5 : 0;
+  const idle = o.walk == null ? 1 : 0, br = Math.sin(t * 2.1 + x * 0.01);
+  g.translate(0, -bob);
+  if (idle) { const hop = (1 - Math.cos(t * 3.4 + x * 0.02)) * 0.5; g.translate(0, -hop * 6); g.scale(1 + (0.5 - hop) * 0.025, 1 - (0.5 - hop) * 0.035 + br * 0.008); }
+  // legs: slim jeans + white sneakers
+  for (const [lx, sg] of [[-14, 1], [14, -1]]) {
+    g.save(); g.translate(lx, -94); g.rotate(w * 0.5 * sg);
+    rrect(g, -13, 0, 26, 88, 8, sg > 0 ? jeans : jeansD); rect(g, -13, 76, 26, 6, '#2C4467');
+    rrect(g, -15 + (f > 0 ? 3 : -11), 82, 38, 13, 6, '#FBFBF7'); rect(g, -15 + (f > 0 ? 3 : -11), 92, 38, 4, C.ink);
+    g.restore();
+  }
+  // arms: rolled overshirt sleeve + forearm; watch on the left wrist
+  const arm = (sx, ang, front) => {
+    g.save(); g.translate(sx, -204); g.rotate(ang);
+    rrect(g, -11, -6, 22, 52, 10, front ? over : mixc(over, '#000000', 0.18)); rect(g, -12, 38, 24, 8, mixc(over, '#FFFFFF', 0.25));
+    rrect(g, -8, 44, 16, 46, 8, front ? sk : skD); if (!front) rect(g, -9, 76, 18, 7, C.ink);
+    circ(g, 0, 94, 11, front ? sk : skD);
+    if (front && o.hold) { g.translate(0, 98); o.hold(g); }
+    g.restore();
+  };
+  const sway = idle ? Math.sin(t * 1.6 + x * 0.02) * 0.07 : 0;
+  if (idle && o.armR == null) { const cyc = (t + x * 0.003) % 5.5, wave = cyc < 1.6 ? Math.sin(Math.PI * cyc / 1.6) : 0; o = { ...o, armR: -2.3 * eo(wave * 1.4) + Math.sin(t * 14) * 0.25 * wave }; }
+  const aL = (o.armL ?? 0) + (o.walk != null ? w * 0.55 : 0) + sway, aR = (o.armR ?? 0) - (o.walk != null ? w * 0.55 : 0) - sway;
+  arm(-40, aL, false);
+  // torso: tee + open overshirt with lapels and a chest pocket
+  rrect(g, -40, -214, 80, 124, 16, over);
+  poly(g, [[-16, -214], [16, -214], [12, -90], [-12, -90]], tee);
+  poly(g, [[-16, -214], [-4, -214], [-14, -178]], mixc(over, '#000000', 0.2)); poly(g, [[16, -214], [4, -214], [14, -178]], mixc(over, '#000000', 0.2));
+  rect(g, 20, -184, 14, 12, mixc(over, '#000000', 0.15));
+  half(g, 0, -214, 10, sk, 0, Math.PI);
+  arm(40, aR, true);
+  // head
+  rect(g, -8, -226, 16, 14, sk);
+  g.save(); g.translate(0, -226); g.rotate(idle ? Math.sin(t * 1.1 + x * 0.03) * 0.09 : Math.sin(t * 7) * 0.04); g.translate(0, 226 - (idle ? Math.max(0, Math.sin(t * 3.4 + x * 0.02)) * 3 : 0));
+  circ(g, -31, -254, 7, skD); circ(g, 31, -254, 7, skD);                       // ears
+  g.beginPath(); g.ellipse(0, -256, 31, 35, 0, 0, TAU); g.fillStyle = sk; g.fill();
+  g.save(); g.globalAlpha *= 0.28; g.beginPath(); g.ellipse(0, -246, 30, 26, 0, 0.15, Math.PI - 0.15); g.fillStyle = C.ink; g.fill(); g.restore();  // stubble
+  // hair: faded sides + swept quiff
+  g.save(); g.globalAlpha *= 0.55; rect(g, -32, -284, 8, 20, C.ink); rect(g, 24, -284, 8, 20, C.ink); g.restore();
+  poly(g, [[-31, -270], [-33, -292], [-20, -306], [2, -314], [26, -310], [38 * f > 0 ? 40 : 36, -296], [32, -276], [10, -286], [-12, -282]], C.ink);
+  // face
+  const ex = f * 6, blink = (Math.floor((t + x * 0.01) * 10) % 37) === 0;
+  if (blink) { rect(g, ex - 17, -256, 10, 3, C.ink); rect(g, ex + 7, -256, 10, 3, C.ink); }
+  else { circ(g, ex - 12, -255, 4, C.ink); circ(g, ex + 12, -255, 4, C.ink); }
+  g.strokeStyle = C.ink; g.lineWidth = 2.6; g.beginPath(); g.roundRect(ex - 23, -264, 20, 16, 5); g.roundRect(ex + 3, -264, 20, 16, 5); g.moveTo(ex - 3, -258); g.lineTo(ex + 3, -258); g.stroke();  // glasses
+  const lift = Math.max(0, Math.sin(t * 1.3 + x * 0.05)) ** 6 * 6;
+  rect(g, ex - 22, -272 - lift, 16, 4, C.ink); rect(g, ex + 6, -272 - lift, 16, 4, C.ink);
+  let m = o.mouth || 'smile';
+  if (m === 'smile' && ((t + x * 0.01) % 4.2) < 0.5) m = 'o';
+  if (m === 'smile') { half(g, ex, -238, 9, C.ink, 0, Math.PI); rect(g, ex - 6, -238, 12, 3, C.cream); }
+  else if (m === 'o') circ(g, ex, -234, 6, C.ink);
+  else if (m === 'sad') { g.strokeStyle = C.ink; g.lineWidth = 3.5; g.beginPath(); g.arc(ex, -226, 9, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); }
+  else rect(g, ex - 8, -236, 16, 3.5, C.ink);
+  g.restore();
+  g.restore();
+}
 
 // ---------------------------------------------------------------- objects
 function jar(g, x, y, s = 1, o = {}) { // y = bottom
@@ -607,7 +667,7 @@ function introArt(L, t) {
   const row = (n, y, x0, r) => { for (let i = 0; i < n; i++) { const b = Math.abs(Math.sin(t * 3 + i + r)) * 8; jar(L, x0 + i * 112, y - b * (r === 0 ? 0 : 1), 1.05, { label: i % 2 === 0 }); } };
   row(4, 1480, 640, 0); row(3, 1340, 696, 1); row(2, 1200, 752, 2); row(1, 1060, 808, 3);
   rect(L, 0, 1480, W, 6, C.ink);
-  person(L, 420, 1480, 2.05, { shirt: C.teal, pants: C.navy, hair: 'short', t: t + 0.3, armR: -2.2 + Math.sin(t * 4) * 0.12, armL: 0.25, mouth: 'smile',
+  rahul(L, 420, 1480, 1.8, { t: t + 0.3, armR: -2.2 + Math.sin(t * 4) * 0.12, armL: 0.25, mouth: 'smile',
     hold: (gg) => { gg.rotate(2.2); jar(gg, 0, 60, 0.75, { label: 1 }); } });
   L.save(); L.translate(870, 760); L.rotate(0.12 + Math.sin(t * 2.5) * 0.06); const k = 1 + Math.sin(t * 5) * 0.04; L.scale(k, k);
   L.fillStyle = C.mustard; L.beginPath(); for (let i = 0; i < 28; i++) { const r = i % 2 ? 150 : 178, a = i * TAU / 28 + t * 0.3; L.lineTo(Math.cos(a) * r, Math.sin(a) * r); } L.closePath(); L.fill();
@@ -653,7 +713,7 @@ export function thumb(g) {
   rect(L, 0, 1480, W, 160, C.ink);
   rect(L, 0, 1540, W, 8, C.paper);
   // hero: Rahul, proud, holding a jar
-  person(L, 420, 1500, 2.05, { shirt: C.teal, pants: C.navy, hair: 'short', t: 0.5, armR: -2.2, armL: 0.25, mouth: 'smile',
+  rahul(L, 420, 1480, 1.8, { t: 0.5, armR: -2.2, armL: 0.25, mouth: 'smile',
     hold: (gg) => { gg.rotate(2.2); jar(gg, 0, 60, 0.75, { label: 1 }); } });
   // money sticker
   L.save(); L.translate(870, 760); L.rotate(0.12);
