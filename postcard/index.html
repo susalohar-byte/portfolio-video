@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8">
+<style>
+@font-face{font-family:Galada;src:url(fonts/galada-bengali-400-normal.woff2)}
+@font-face{font-family:Galada;src:url(fonts/galada-latin-400-normal.woff2);unicode-range:U+0000-00FF}
+@font-face{font-family:Tiro;src:url(fonts/tiro-bangla-bengali-400-normal.woff2)}
+@font-face{font-family:Tiro;src:url(fonts/tiro-bangla-latin-400-normal.woff2);unicode-range:U+0000-00FF}
+@font-face{font-family:Hind;font-weight:500;src:url(fonts/hind-siliguri-bengali-500-normal.woff2)}
+@font-face{font-family:Hind;font-weight:600;src:url(fonts/hind-siliguri-bengali-600-normal.woff2)}
+@font-face{font-family:Hind;font-weight:500;src:url(fonts/hind-siliguri-latin-500-normal.woff2);unicode-range:U+0000-00FF}
+@font-face{font-family:Hind;font-weight:600;src:url(fonts/hind-siliguri-latin-600-normal.woff2);unicode-range:U+0000-00FF}
+html,body{margin:0;background:#111}canvas{width:360px;height:640px}
+</style>
+<canvas id=c width=1080 height=1920></canvas>
+<script type=module>
+import { draw, setup, DURATION, FPS, events } from './film.js';
+const [lines, dur] = await Promise.all([fetch('lines.json').then(r => r.json()), fetch('voice/dur.json').then(r => r.json())]);
+setup(lines, dur);
+await Promise.all(['92px Galada', '44px Tiro', '600 30px Hind', '500 22px Hind'].map(f => document.fonts.load(f, 'বাংলা')));
+const g = document.getElementById('c').getContext('2d');
+window.frame = async t => { draw(g, t); return g.canvas.toDataURL('image/jpeg', 0.93); };
+window.META = { DURATION, FPS, events: events() };
+window.READY = true;
+if (!navigator.webdriver) { const t0 = performance.now(); const loop = () => { draw(g, ((performance.now() - t0) / 1000) % DURATION); requestAnimationFrame(loop); }; loop(); }
+</script>

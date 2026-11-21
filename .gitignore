@@ -5,3 +5,5 @@ music/score.wav
 music/hits.json
 voice/.cache/
 .DS_Store
+postcard/voice/*_*.wav
+postcard/voice/gap.wav
