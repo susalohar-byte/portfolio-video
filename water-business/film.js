@@ -62,6 +62,8 @@ function pop(g, v, px, py, fn, mode = 's') {
   else if (mode === 'fade') g.globalAlpha *= clamp(v);
   g.translate(-px, -py); fn(); g.restore();
 }
+// one ground line so characters stand on something
+function ground(g, y, v) { if (v <= 0) return; const w = 880 * eo(v); rect(g, 540 - w / 2, y, w, 5, C.ink); }
 const frame = (g, d, V, cx = 540, cy = 820, r = 420) => { cArc(g, cx, cy, r, -Math.PI / 2, Math.PI * 1.5, V(d, 1.2)); cLine(g, 70, cy + 260, 1010, cy + 260, V(d + 0.1, 0.9)); cLine(g, cx, 320, cx, 1330, V(d + 0.2, 0.9)); cross(g, 100, 470, V(d + 0.3)); cross(g, 980, 1270, V(d + 0.35)); };
 
 // ---------------------------------------------------------------- characters (built from circles, rects, triangles)
@@ -171,26 +173,27 @@ const ART = {};
 ART.S01 = (g, lt, V, P, t) => {
   pop(g, V(0.2, 0.8), 540, 900, () => { circ(g, 540, 900, 360, C.orange); circ(g, 540, 900, 250, '#EE7B3E'); });
   const HS = [[80, 160, 230, C.pink, C.terra], [250, 140, 300, C.mustard, C.red], [400, 170, 220, C.marble, C.teal], [580, 150, 280, C.pink, C.navy], [740, 180, 240, C.mustard, C.terra]];
-  HS.forEach(([x, w, h, c, r], i) => pop(g, V(0.4 + i * 0.1, 0.6), x + w / 2, 1080, () => house(g, x, 1080, w, h, c, r), 'y'));
-  pop(g, V(0.5, 0.6), 540, 1080, () => rect(g, 60, 1080, 960, 40, C.ink), 'x');
+  HS.forEach(([x, w, h, c, r], i) => pop(g, V(0.4 + i * 0.1, 0.6), x + w / 2, 1282, () => house(g, x, 1282, w, h, c, r), 'y'));
+  ground(g, 1282, V(0.5, 0.7));
   const wx = lerp(-120, 540, eio((lt - 0.8) / 2.6)), walking = lt > 0.8 && lt < 3.4;
   rahul(g, wx, 1280, 1.15, { walk: walking ? lt * 7 : null, t, armR: lt > P(1) ? -0.4 : 0, hold: lt > P(1) ? (gg) => {} : null });
   // pocket money + plan bubble
-  pop(g, V(P(1) + 0.2), 300, 1260, () => { coinStack(g, 300, 1260, Math.max(1, Math.round(8 * eo((lt - P(1) - 0.2) / 1.2)))); tag(g, 300, 1100, '₹৩ লাখ', C.mustard, C.ink, 38); });
+  pop(g, V(P(1) + 0.2), 160, 1280, () => { coinStack(g, 160, 1280, Math.max(1, Math.round(8 * eo((lt - P(1) - 0.2) / 1.2)))); tag(g, 160, 1110, '₹৩ লাখ', C.ink, C.cream, 38); });
   pop(g, V(P(1) + 0.9), 760, 760, () => { circ(g, 650, 1000, 16, C.cream); circ(g, 690, 940, 24, C.cream); rrect(g, 600, 640, 360, 250, 120, C.cream); txt(g, 'প্ল্যান', 780, 730, F.bn(40, 600), C.ink, 'center'); bigNum(g, '₹১১ লাখ', 780, 820, 66, C.blue); });
 };
 ART.S02 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 820, 400);
+  ground(g, 1150, V(0.2, 0.7));
   pop(g, V(0.3, 0.6), 280, 1150, () => tubewell(g, 280, 1150, 1.4, lt, lt < P(1)), 'y');
   const rust = ss(P(0) + 1.4, P(0) + 3.6, lt);
   pop(g, V(0.8), 430, 1150, () => { poly(g, [[350, 1000], [510, 1000], [490, 1150], [370, 1150]], C.gray); poly(g, [[358, 1020], [502, 1020], [486, 1130], [374, 1130]], mixc(C.sky, C.rust, rust)); rect(g, 344, 992, 172, 14, C.ink); });
   if (lt > P(0) + 0.6 && lt < P(1)) { const dy = ((lt * 2) % 1) * 90; circ(g, 410, 945 + dy, 9, mixc(C.sky, C.rust, rust)); }
   pop(g, V(P(0) + 2.2), 430, 880, () => tag(g, 430, 880, 'আয়রন', C.rust, C.cream, 38));
   // brand jar, far away + expensive
-  pop(g, V(P(1) + 0.1), 800, 1040, () => { jar(g, 800, 1100, 1.4, { c: C.sky, label: 1 }); tag(g, 800, 860, '₹ ₹ ₹', C.red, C.cream, 40); });
+  pop(g, V(P(1) + 0.1), 800, 1040, () => { jar(g, 800, 1150, 1.4, { c: C.sky, label: 1 }); tag(g, 800, 900, '₹ ₹ ₹', C.red, C.cream, 40); });
   // the idea
-  pop(g, V(P(2) + 0.1), 540, 600, () => { circ(g, 540, 560, 70, C.mustard); rect(g, 520, 620, 40, 30, C.ink); for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + lt * 0.4; stroke(g, [[540 + Math.cos(a) * 92, 560 + Math.sin(a) * 92], [540 + Math.cos(a) * 118, 560 + Math.sin(a) * 118]], C.mustard, 8); } });
-  pop(g, V(P(2) + 0.6), 560, 1290, () => rahul(g, 560, 1290, 0.9, { t, armR: -2.5, mouth: 'o' }), 'up');
+  pop(g, V(P(2) + 0.1), 540, 600, () => { circ(g, 600, 740, 60, C.mustard); rect(g, 582, 792, 36, 26, C.ink); for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + lt * 0.4; stroke(g, [[600 + Math.cos(a) * 80, 740 + Math.sin(a) * 80], [600 + Math.cos(a) * 104, 740 + Math.sin(a) * 104]], C.mustard, 8); } });
+  pop(g, V(P(2) + 0.6), 600, 1150, () => rahul(g, 600, 1150, 0.9, { t, armR: -2.5, mouth: 'o' }), 'up');
 };
 ART.S03 = (g, lt, V, P, t) => {
   cArc(g, 540, 820, 420, -Math.PI / 2, Math.PI * 1.5, V(0, 1.2)); cross(g, 100, 470, V(0.3)); cross(g, 980, 1270, V(0.35));
@@ -209,6 +212,7 @@ ART.S03 = (g, lt, V, P, t) => {
 ART.S04 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 840, 420);
   // desk
+  ground(g, 1330, V(0.2, 0.7));
   pop(g, V(0.5), 760, 1330, () => rahul(g, 760, 1330, 0.95, { t, face: -1, mouth: lt > P(4) ? 'smile' : 'flat', armL: -0.5 }), 'up');
   pop(g, V(0.3, 0.6), 540, 1200, () => { rect(g, 120, 1180, 840, 30, C.ink); rect(g, 160, 1210, 26, 120, C.ink); rect(g, 894, 1210, 26, 120, C.ink); }, 'x');
   const D = [['FSSAI', P(1) + 0.3, 260, 640, -0.06, C.red], ['GROUNDWATER NOC', P(2) + 0.2, 560, 560, 0.05, C.blue], ['LAB TEST', P(3) + 0.4, 820, 700, 0.06, C.teal]];
@@ -271,10 +275,11 @@ ART.S07 = (g, lt, V, P, t) => {
 };
 ART.S08 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 800, 400);
-  pop(g, V(0.3, 0.6), 330, 1000, () => { shop(g, 160, 1000, 340, 280, C.teal); }, 'y');
-  pop(g, V(0.6), 330, 1000, () => { for (let i = 0; i < 4; i++) jar(g, 220 + i * 74, 1000, 0.6); });
-  pop(g, V(P(0) + 1.2), 330, 520, () => { tag(g, 330, 470, 'বাড়িতে ₹৩০', C.orange, C.cream, 42); tag(g, 330, 575, 'দোকানে ₹২০', C.mustard, C.ink, 42); });
-  pop(g, V(P(1) + 0.1), 330, 1200, () => { bigNum(g, '৫০ জার / দিন', 330, 1180, 64, C.red); });
+  ground(g, 1300, V(0.2, 0.7));
+  pop(g, V(0.3, 0.6), 330, 1300, () => { shop(g, 160, 1300, 340, 280, C.teal); }, 'y');
+  pop(g, V(0.6), 330, 1300, () => { for (let i = 0; i < 4; i++) jar(g, 220 + i * 74, 1300, 0.6); });
+  pop(g, V(P(0) + 1.2), 330, 600, () => { tag(g, 330, 560, 'বাড়িতে ₹৩০', C.orange, C.cream, 42); tag(g, 330, 660, 'দোকানে ₹২০', C.mustard, C.ink, 42); });
+  pop(g, V(P(1) + 0.1), 330, 840, () => { bigNum(g, '৫০ জার / দিন', 330, 860, 64, C.red); });
   pop(g, V(P(2) + 0.1), 780, 1300, () => { person(g, 780, 1300, 0.85, { sari: C.purple, shirt: C.pink, hair: 'bun', skin: C.skin2, t, face: -1, mouth: 'flat', armR: -0.6 }); bubbleSay(g, 760, 900, 380, 110, 'জল কিনব কেন?', C.cream, 1); }, 'up');
   pop(g, V(P(3) + 0.1), 820, 640, () => { g.save(); g.globalAlpha = 1; jar(g, 820, 700, 0.9, { c: '#9CC3D6' }); tag(g, 820, 530, '₹১৫', C.ink, C.cream, 40); g.save(); g.translate(820, 640); g.rotate(-0.25); g.strokeStyle = C.red; g.lineWidth = 6; g.strokeRect(-130, -36, 260, 72); txt(g, 'লাইসেন্স নেই', 0, 12, F.bn(32, 700), C.red, 'center'); g.restore(); g.restore(); });
 };
@@ -306,11 +311,14 @@ ART.S10 = (g, lt, V, P, t) => {
 ART.S11 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 800, 400);
   const lightsOn = !(lt > P(0) + 0.4 && lt < P(1) + 1.2);
+  g.save(); g.translate(430, 1330); g.scale(0.85, 0.85); g.translate(-540, -1100);
   pop(g, V(0.3, 0.6), 540, 1100, () => { rect(g, 200, 760, 680, 340, C.teal); poly(g, [[180, 760], [540, 620], [900, 760]], C.ink); tank(g, 330, 1100, 120, 200, C.sky); tank(g, 480, 1100, 120, 200, C.sky); rrect(g, 600, 900, 220, 70, 35, C.blue); }, 'y');
   [[380, 700], [700, 700]].forEach(([x, y], i) => pop(g, V(0.6 + i * 0.1), x, y, () => bulb(g, x, y, lightsOn)));
   if (!lightsOn && V(0) > 0.5) { g.globalAlpha = 0.35; rect(g, 200, 620, 680, 480, C.ink); g.globalAlpha = 1; pop(g, clamp((lt - P(0) - 0.4) / 0.3), 540, 520, () => { bolt(g, 540, 520, 1.3); tag(g, 540, 420, 'লোডশেডিং', C.ink, C.cream, 38); }); }
-  pop(g, V(P(1) + 0.2), 820, 1300, () => { gen(g, 820, 1300, 1, lt, lt > P(1) + 1.2); tag(g, 820, 1100, '₹৪০,০০০', C.red, C.cream, 36); }, 'right');
-  pop(g, V(P(2) + 0.1), 260, 1300, () => { const sw = ss(P(2) + 0.6, P(2) + 1.6, lt); rrect(g, 180, 1180 - sw * 60, 50, 120, 20, mixc(C.cream, C.rust, 0.7)); rrect(g, 260, 1180 - (1 - sw) * 60, 50, 120, 20, C.cream); txt(g, 'ফিল্টার', 250, 1340, F.bn(30, 700), C.ink, 'center'); });
+  g.restore();
+  ground(g, 1330, V(0.2, 0.7));
+  pop(g, V(P(1) + 0.2), 870, 1330, () => { gen(g, 870, 1330, 0.9, lt, lt > P(1) + 1.2); tag(g, 870, 1150, '₹৪০,০০০', C.red, C.cream, 36); }, 'right');
+  pop(g, V(P(2) + 0.1), 870, 960, () => { const sw = ss(P(2) + 0.6, P(2) + 1.6, lt); rrect(g, 800, 900 - sw * 60, 50, 120, 20, mixc(C.cream, C.rust, 0.7)); rrect(g, 880, 900 - (1 - sw) * 60, 50, 120, 20, C.cream); txt(g, 'ফিল্টার', 870, 820, F.bn(30, 700), C.ink, 'center'); });
   if (V(P(2) + 1.8) > 0) { const wx = lerp(560, 1200, ss(P(2) + 2.2, P(2) + 5, lt)); person(g, wx, 1330, 0.7, { shirt: C.orange, pants: C.ink, hair: 'cap', capc: C.blue, t, walk: lt > P(2) + 2.2 ? lt * 7 : null, mouth: 'sad' }); }
 };
 ART.S12 = (g, lt, V, P, t) => {
@@ -321,6 +329,7 @@ ART.S12 = (g, lt, V, P, t) => {
   icons.forEach(([x, y, i]) => pop(g, V(0.3 + i * 0.07, 0.4), x, y, () => { const c = [C.pink, C.mustard, C.marble, C.teal][i % 4]; if (i === 9 || i === 20) { shop(g, x - 45, y + 50, 90, 70, C.mustard); } else if (i === 13) { rect(g, x - 60, y - 30, 120, 80, C.red); poly(g, [[x - 70, y - 30], [x, y - 80], [x + 70, y - 30]], C.ink); } else house(g, x - 40, y + 50, 80, 70, c); }));
   const labs = [['৪০০ বাড়ি', C.pink], ['৩০ দোকান', C.mustard], ['২ স্কুল', C.red], ['অফিস', C.teal]];
   labs.forEach(([s, c], i) => pop(g, V(P(0) + 0.4 + i * 0.8), 170 + i * 250, 1150, () => tag(g, 170 + i * 250, 1150, s, c, C.ink, 34)));
+  ground(g, 1332, V(P(1), 0.7));
   pop(g, V(P(1) + 0.1), 540, 1260, () => { const x = lerp(-300, 1300, ss(P(1), P(1) + 4.5, lt)); rickshaw(g, x, 1330, 0.55, 8, lt * 8); });
   pop(g, V(P(1) + 0.5), 540, 440, () => tag(g, 540, 440, bnd(Math.round(220 * eo((lt - P(1) - 0.5) / 1.6))) + ' জার / দিন', C.blue, C.cream, 54));
 };
@@ -367,6 +376,7 @@ ART.S15 = (g, lt, V, P, t) => {
 };
 ART.S16 = (g, lt, V, P, t, last) => {
   pop(g, V(0.1, 0.8), 540, 960, () => { circ(g, 540, 960, 380, C.orange); circ(g, 540, 960, 270, '#EE7B3E'); });
+  ground(g, 1282, V(0.2, 0.7));
   pop(g, V(0.3), 540, 1280, () => rahul(g, 540, 1280, 1.3, { t, armR: -2.6 + Math.sin(lt * 5) * 0.3, hold: null, mouth: 'smile' }), 'up');
   pop(g, V(0.6), 300, 1280, () => jar(g, 300, 1280, 1.3, { label: 1 }));
   pop(g, V(0.8), 800, 1280, () => rickshaw(g, 780, 1280, 0.45, 6));
