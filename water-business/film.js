@@ -243,13 +243,8 @@ function flask(g, x, y, s, c = C.teal) { g.save(); g.translate(x, y); g.scale(s,
 const ART = {};
 // ---- soft modern backdrops (light tints), one shape per scene, gently animated
 const PAL = { peach: '#F5D5C2', mint: '#D3E6D8', sky: '#D2E2EE', butter: '#F4E4B8', lilac: '#E3D8EC', blush: '#F2D0CA', sand: '#EBDDC6' };
-const BACK = {
-  S01: ['sun', C.orange, 540, 900, 360], S02: ['blob', PAL.lilac, 520, 930, 380], S03: ['round', PAL.butter, 540, 900, 820, 760],
-  S04: ['arch', PAL.lilac, 540, 1330, 760, 860], S05: ['round', PAL.mint, 540, 840, 900, 980], S06: ['blob', PAL.butter, 540, 860, 400],
-  S07: ['round', PAL.sky, 540, 900, 900, 860], S08: ['blob', PAL.blush, 560, 960, 400], S09: ['arch', PAL.mint, 540, 1180, 820, 780],
-  S10: ['blob', PAL.lilac, 540, 880, 410], S11: ['arch', PAL.sand, 470, 1330, 700, 800], S12: ['wave', PAL.mint, 540, 860, 960, 700],
-  S13: ['round', PAL.peach, 540, 880, 900, 900], S14: ['split', PAL.peach, 540, 830, 920, 760], S15: ['arch', PAL.butter, 540, 1180, 860, 860],
-  S16: ['blob', PAL.peach, 540, 960, 420], INTRO: ['sun', C.orange, 600, 1010, 380],
+const BACK = {   // like before: the orange sun only on the cover, the first scene and the last scene
+  S01: ['sun', C.orange, 540, 900, 360], S16: ['sun', C.orange, 540, 960, 380], INTRO: ['sun', C.orange, 600, 1010, 380],
 };
 function backdrop(g, key, t, v) {
   const b = BACK[key]; if (!b || v <= 0) return;
