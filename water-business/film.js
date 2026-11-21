@@ -169,8 +169,7 @@ function flask(g, x, y, s, c = C.teal) { g.save(); g.translate(x, y); g.scale(s,
 // ---------------------------------------------------------------- scenes  (art area ≈ y 320..1340)
 const ART = {};
 ART.S01 = (g, lt, V, P, t) => {
-  frame(g, 0, V);
-  pop(g, V(0.3), 820, 560, () => circ(g, 820, 560, 110, C.orange));
+  pop(g, V(0.2, 0.8), 540, 900, () => { circ(g, 540, 900, 360, C.orange); circ(g, 540, 900, 250, '#EE7B3E'); });
   const HS = [[80, 160, 230, C.pink, C.terra], [250, 140, 300, C.mustard, C.red], [400, 170, 220, C.marble, C.teal], [580, 150, 280, C.pink, C.navy], [740, 180, 240, C.mustard, C.terra]];
   HS.forEach(([x, w, h, c, r], i) => pop(g, V(0.4 + i * 0.1, 0.6), x + w / 2, 1080, () => house(g, x, 1080, w, h, c, r), 'y'));
   pop(g, V(0.5, 0.6), 540, 1080, () => rect(g, 60, 1080, 960, 40, C.ink), 'x');
@@ -179,7 +178,6 @@ ART.S01 = (g, lt, V, P, t) => {
   // pocket money + plan bubble
   pop(g, V(P(1) + 0.2), 300, 1260, () => { coinStack(g, 300, 1260, Math.max(1, Math.round(8 * eo((lt - P(1) - 0.2) / 1.2)))); tag(g, 300, 1100, '₹৩ লাখ', C.mustard, C.ink, 38); });
   pop(g, V(P(1) + 0.9), 760, 760, () => { circ(g, 650, 1000, 16, C.cream); circ(g, 690, 940, 24, C.cream); rrect(g, 600, 640, 360, 250, 120, C.cream); txt(g, 'প্ল্যান', 780, 730, F.bn(40, 600), C.ink, 'center'); bigNum(g, '₹১১ লাখ', 780, 820, 66, C.blue); });
-  pop(g, V(P(2) + 0.1), 540, 470, () => { tag(g, 540, 470, 'এক বছর পরে, মাসে কত?', C.ink, C.cream, 44); });
 };
 ART.S02 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 820, 400);
@@ -190,7 +188,6 @@ ART.S02 = (g, lt, V, P, t) => {
   pop(g, V(P(0) + 2.2), 430, 880, () => tag(g, 430, 880, 'আয়রন', C.rust, C.cream, 38));
   // brand jar, far away + expensive
   pop(g, V(P(1) + 0.1), 800, 1040, () => { jar(g, 800, 1100, 1.4, { c: C.sky, label: 1 }); tag(g, 800, 860, '₹ ₹ ₹', C.red, C.cream, 40); });
-  pop(g, V(P(1) + 0.8), 800, 1180, () => { const rx = 650 + ((lt * 60) % 300); stroke(g, [[620, 1200], [980, 1200]], C.ink, 6); stroke(g, [[rx, 1180], [rx + 40, 1220]], C.red, 8); stroke(g, [[rx + 40, 1180], [rx, 1220]], C.red, 8); });
   // the idea
   pop(g, V(P(2) + 0.1), 540, 600, () => { circ(g, 540, 560, 70, C.mustard); rect(g, 520, 620, 40, 30, C.ink); for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + lt * 0.4; stroke(g, [[540 + Math.cos(a) * 92, 560 + Math.sin(a) * 92], [540 + Math.cos(a) * 118, 560 + Math.sin(a) * 118]], C.mustard, 8); } });
   pop(g, V(P(2) + 0.6), 560, 1290, () => rahul(g, 560, 1290, 0.9, { t, armR: -2.5, mouth: 'o' }), 'up');
@@ -200,26 +197,25 @@ ART.S03 = (g, lt, V, P, t) => {
   // dotted route between three plants
   const pts = [[160, 1200], [300, 720], [600, 980], [880, 560]];
   g.setLineDash([4, 18]); stroke(g, pts.map(p => p), C.ink, 6); g.setLineDash([]);
-  const plantIcon = (x, y, d, c) => pop(g, V(d), x, y, () => { rect(g, x - 70, y - 90, 140, 90, c); tank(g, x - 30, y - 90, 50, 70, C.sky); rect(g, x + 10, y - 150, 24, 60, C.ink); txt(g, 'PLANT', x, y + 34, F.mono(20, 500), C.ink, 'center'); });
+  const plantIcon = (x, y, d, c) => pop(g, V(d), x, y, () => { rect(g, x - 70, y - 90, 140, 90, c); tank(g, x - 30, y - 90, 50, 70, C.sky); rect(g, x + 10, y - 150, 24, 60, C.ink); });
   plantIcon(300, 720, 0.5, C.pink); plantIcon(600, 980, 0.7, C.mustard); plantIcon(880, 560, 0.9, C.teal);
   // Rahul travels along the route
   const u = ss(P(0), P(1) - 0.3, lt), seg = Math.min(2, Math.floor(u * 3)), su = u * 3 - seg;
   const [ax, ay] = pts[seg], [bx, by] = pts[seg + 1];
   pop(g, V(0.3), ax, ay, () => rahul(g, lerp(ax, bx, eio(su)), lerp(ay, by, eio(su)) + 10, 0.55, { walk: su > 0.02 && su < 0.98 ? lt * 8 : null, t, face: bx > ax ? 1 : -1, hold: (gg) => { rect(gg, -12, -10, 40, 50, C.cream); rect(gg, -6, 0, 28, 4, C.ink); rect(gg, -6, 12, 28, 4, C.ink); } }));
   pop(g, V(P(1) + 0.1), 300, 1180, () => { circ(g, 300, 1180, 130, C.blue); bigNum(g, '১০০০', 300, 1180, 64, C.cream); txt(g, 'লিটার / ঘণ্টা', 300, 1232, F.bn(28, 600), C.cream, 'center'); });
-  pop(g, V(P(1) + 1.2), 760, 1260, () => { jar(g, 760, 1290, 1.6, { label: 1 }); tag(g, 760, 1050, '২০ লিটার জার', C.ink, C.cream, 34); });
+  pop(g, V(P(1) + 1.2), 760, 1260, () => { jar(g, 760, 1290, 1.6, { label: 1 }); });
 };
 ART.S04 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 840, 420);
   // desk
   pop(g, V(0.5), 760, 1330, () => rahul(g, 760, 1330, 0.95, { t, face: -1, mouth: lt > P(4) ? 'smile' : 'flat', armL: -0.5 }), 'up');
   pop(g, V(0.3, 0.6), 540, 1200, () => { rect(g, 120, 1180, 840, 30, C.ink); rect(g, 160, 1210, 26, 120, C.ink); rect(g, 894, 1210, 26, 120, C.ink); }, 'x');
-  const D = [['FSSAI', P(1) + 0.3, 240, 560, -0.06, C.red], ['GROUNDWATER NOC', P(2) + 0.2, 560, 520, 0.05, C.blue], ['TRADE', P(3) + 0.1, 250, 880, 0.04, C.green], ['L. METROLOGY', P(3) + 1.6, 540, 860, -0.05, C.purple], ['LAB TEST', P(3) + 3.4, 840, 640, 0.06, C.teal]];
-  D.forEach(([ti, d, x, y, r, sc], i) => pop(g, V(d, 0.5), x, y, () => doc(g, x, y, i === 1 ? 320 : 240, 260, ti, (lt - d - (i === 1 ? 2.8 : 1.2)) / 0.4, sc, r), 'up'));
+  const D = [['FSSAI', P(1) + 0.3, 260, 640, -0.06, C.red], ['GROUNDWATER NOC', P(2) + 0.2, 560, 560, 0.05, C.blue], ['LAB TEST', P(3) + 0.4, 820, 700, 0.06, C.teal]];
+  D.forEach(([ti, d, x, y, r, sc], i) => pop(g, V(d, 0.5), x, y, () => doc(g, x, y, i === 1 ? 330 : 260, 290, ti, (lt - d - (i === 1 ? 2.8 : 1.2)) / 0.4, sc, r), 'up'));
   // NOC takes longest: hourglass
   pop(g, V(P(2) + 0.6), 950, 880, () => { const fl = clamp((lt - P(2) - 0.6) / 3); g.save(); g.translate(950, 880); g.rotate(Math.floor(lt - P(2)) % 2 ? 0 : 0); poly(g, [[-36, -60], [36, -60], [0, 0]], C.cream); poly(g, [[0, 0], [36, 60], [-36, 60]], C.cream); poly(g, [[-36 * (1 - fl), -60 + 60 * fl], [36 * (1 - fl), -60 + 60 * fl], [0, 0]], C.mustard); poly(g, [[-36 * fl, 60 - 60 * fl], [36 * fl, 60 - 60 * fl], [36, 60], [-36, 60]], C.mustard); rect(g, -44, -68, 88, 10, C.ink); rect(g, -44, 58, 88, 10, C.ink); g.restore(); });
   pop(g, V(P(4) + 0.1), 330, 1095, () => calendar(g, 330, 1095, 0.6, 'সময়', '৪ মাস'));
-  pop(g, V(P(4) + 1.4), 330, 1290, () => { tag(g, 330, 1290, 'ISI মার্ক: ঐচ্ছিক', C.ink, C.cream, 34); });
 };
 const ROWS5 = [['আর-ও প্ল্যান্ট', 500000], ['জার মেশিন', 120000], ['৬০০ খালি জার', 75000], ['বোরিং, শেড, ওয়্যারিং', 150000], ['লাইসেন্স ও টেস্ট', 60000], ['ই-রিকশা লোডার', 160000], ['৩ মাসের খরচ', 100000]];
 ART.S05 = (g, lt, V, P, t) => {
@@ -246,7 +242,6 @@ ART.S06 = (g, lt, V, P, t) => {
     rect(g, x - 100, 1150 - hh, 200, hh, c); for (let k = 1; k < hh / 40; k++) rect(g, x - 100, 1150 - k * 40, 200, 3, 'rgba(31,29,27,0.15)');
     g.globalAlpha = clamp(v * 2); bigNum(g, inr(Math.round(amt * eo(v) / 1000) * 1000), x, 1130 - hh - 22, 44, C.ink); txt(g, name, x, 1210, F.bn(36, 600), C.ink, 'center'); g.globalAlpha = 1;
   });
-  pop(g, V(0.4), 540, 460, () => { for (let i = 0; i < 3; i++) coin(g, 470 + i * 70, 470 + Math.sin(lt * 2 + i) * 6, 32); });
   pop(g, V(P(2) + 0.1), 540, 1290, () => { tag(g, 540, 1290, 'কিস্তি ₹১৫,২০০ / মাস × ৬০', C.ink, C.cream, 38); });
 };
 ART.S07 = (g, lt, V, P, t) => {
@@ -276,10 +271,10 @@ ART.S07 = (g, lt, V, P, t) => {
 };
 ART.S08 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 800, 400);
-  pop(g, V(0.3, 0.6), 330, 1000, () => { shop(g, 160, 1000, 340, 280, C.teal); txt(g, 'রাহুল ওয়াটার', 330, 690, F.bn(34, 700), C.ink, 'center'); }, 'y');
+  pop(g, V(0.3, 0.6), 330, 1000, () => { shop(g, 160, 1000, 340, 280, C.teal); }, 'y');
   pop(g, V(0.6), 330, 1000, () => { for (let i = 0; i < 4; i++) jar(g, 220 + i * 74, 1000, 0.6); });
   pop(g, V(P(0) + 1.2), 330, 520, () => { tag(g, 330, 470, 'বাড়িতে ₹৩০', C.orange, C.cream, 42); tag(g, 330, 575, 'দোকানে ₹২০', C.mustard, C.ink, 42); });
-  pop(g, V(P(1) + 0.1), 330, 1200, () => { bigNum(g, '৫০ জার / দিন', 330, 1150, 58, C.red); for (let i = 0; i < 10; i++) jar(g, 120 + i * 46, 1290, 0.38); });
+  pop(g, V(P(1) + 0.1), 330, 1200, () => { bigNum(g, '৫০ জার / দিন', 330, 1180, 64, C.red); });
   pop(g, V(P(2) + 0.1), 780, 1300, () => { person(g, 780, 1300, 0.85, { sari: C.purple, shirt: C.pink, hair: 'bun', skin: C.skin2, t, face: -1, mouth: 'flat', armR: -0.6 }); bubbleSay(g, 760, 900, 380, 110, 'জল কিনব কেন?', C.cream, 1); }, 'up');
   pop(g, V(P(3) + 0.1), 820, 640, () => { g.save(); g.globalAlpha = 1; jar(g, 820, 700, 0.9, { c: '#9CC3D6' }); tag(g, 820, 530, '₹১৫', C.ink, C.cream, 40); g.save(); g.translate(820, 640); g.rotate(-0.25); g.strokeStyle = C.red; g.lineWidth = 6; g.strokeRect(-130, -36, 260, 72); txt(g, 'লাইসেন্স নেই', 0, 12, F.bn(32, 700), C.red, 'center'); g.restore(); g.restore(); });
 };
@@ -290,7 +285,7 @@ ART.S09 = (g, lt, V, P, t) => {
   pop(g, V(0.4, 0.6), 540, 900, () => rect(g, 60, 900, 960, 14, C.ink), 'x');
   pop(g, V(P(1) + 0.1), 240, 1150, () => { jar(g, 240, 1290, 1.5, { label: 1 }); g.save(); g.translate(330, 1100); g.rotate(0.12); rect(g, 0, 0, 150, 110, C.cream); txt(g, 'LAB', 75, 36, F.mono(24), C.ink, 'center'); rect(g, 20, 52, 110, 6, C.shade); rect(g, 20, 70, 80, 6, C.shade); txt(g, '✓', 120, 98, F.bn(30, 700), C.green, 'center'); g.restore(); });
   pop(g, V(P(2) + 0.1), 600, 1170, () => phone(g, 600, 1170, 0.85));
-  pop(g, V(P(2) + 0.8), 800, 1120, () => { clock(g, 800, 1100, 80, lt); tag(g, 800, 1250, '২ ঘণ্টা', C.ink, C.cream, 34); });
+  pop(g, V(P(2) + 0.8), 800, 1120, () => { clock(g, 800, 1120, 90, lt); });
   pop(g, V(P(3) + 0.1), 540, 560, () => { const u = eo((lt - P(3) - 0.2) / 1.2); rect(g, 300, 560 - 40, 140, 40, C.gray); rect(g, 640, 560 - 40, lerp(140, 336, u), 40, C.blue); txt(g, '৫০', 370, 500, F.bn(34, 700), C.ink, 'center'); txt(g, bnd(Math.round(lerp(50, 120, u))) + ' জার/দিন', 640 + lerp(140, 336, u) / 2, 500, F.bn(34, 700), C.blue, 'center'); stroke(g, [[460, 540], [610, 540]], C.ink, 5); poly(g, [[612, 528], [630, 540], [612, 552]], C.ink); });
 };
 ART.S10 = (g, lt, V, P, t) => {
@@ -304,8 +299,7 @@ ART.S10 = (g, lt, V, P, t) => {
     if (gone > 0.5 && V(0) > 0) { g.globalAlpha = Math.min(1, (gone - 0.5) * 2) * V(0); txt(g, '?', x, y - 30, F.bn(64, 700), C.red, 'center'); g.globalAlpha = 1; }
   }
   pop(g, V(P(1) + 2.2), 540, 1030, () => tag(g, 540, 1030, '−১২০ জার = −₹১৫,০০০', C.red, C.cream, 42));
-  pop(g, V(P(2) + 0.1), 300, 1300, () => { shop(g, 140, 1300, 320, 190, C.mustard); }, 'y');
-  pop(g, V(P(2) + 0.6), 700, 1200, () => { g.save(); g.translate(720, 1200); g.rotate(0.05); rect(g, -170, -90, 340, 180, C.cream); txt(g, 'বাকি খাতা', 0, -40, F.bn(32, 700), C.ink, 'center'); bigNum(g, '₹৪০,০০০', 0, 50, 66, C.red); g.restore(); });
+  pop(g, V(P(2) + 0.3), 540, 1220, () => { g.save(); g.translate(540, 1220); g.rotate(0.03); rect(g, -170, -90, 340, 180, C.cream); txt(g, 'বাকি খাতা', 0, -40, F.bn(32, 700), C.ink, 'center'); bigNum(g, '₹৪০,০০০', 0, 50, 66, C.red); g.restore(); });
   pop(g, V(P(3) + 0.1), 260, 470, () => { coin(g, 220, 460, 60, C.green); txt(g, '₹১৫০ জমা', 340, 474, F.bn(40, 700), C.ink); });
   pop(g, V(P(3) + 1.6), 860, 470, () => calendar(g, 860, 470, 0.7, 'প্রতি সপ্তাহ', 'শনি', C.blue));
 };
@@ -323,7 +317,7 @@ ART.S12 = (g, lt, V, P, t) => {
   frame(g, 0, V, 540, 800, 400);
   // a little town that fills up
   const R = rng(12); const icons = [];
-  for (let i = 0; i < 28; i++) icons.push([110 + (i % 7) * 140 + (R() - 0.5) * 30, 520 + Math.floor(i / 7) * 150 + (R() - 0.5) * 20, i]);
+  for (let i = 0; i < 21; i++) icons.push([110 + (i % 7) * 140 + (R() - 0.5) * 30, 520 + Math.floor(i / 7) * 150 + (R() - 0.5) * 20, i]);
   icons.forEach(([x, y, i]) => pop(g, V(0.3 + i * 0.07, 0.4), x, y, () => { const c = [C.pink, C.mustard, C.marble, C.teal][i % 4]; if (i === 9 || i === 20) { shop(g, x - 45, y + 50, 90, 70, C.mustard); } else if (i === 13) { rect(g, x - 60, y - 30, 120, 80, C.red); poly(g, [[x - 70, y - 30], [x, y - 80], [x + 70, y - 30]], C.ink); } else house(g, x - 40, y + 50, 80, 70, c); }));
   const labs = [['৪০০ বাড়ি', C.pink], ['৩০ দোকান', C.mustard], ['২ স্কুল', C.red], ['অফিস', C.teal]];
   labs.forEach(([s, c], i) => pop(g, V(P(0) + 0.4 + i * 0.8), 170 + i * 250, 1150, () => tag(g, 170 + i * 250, 1150, s, c, C.ink, 34)));
@@ -370,16 +364,12 @@ ART.S15 = (g, lt, V, P, t) => {
   MONTHS.forEach((m, i) => pop(g, V(0.4 + i * 0.12 + (i < 6 ? 0 : P(1) * 0.5), 0.5), X0 + i * bw + bw / 2, Y0, () => { const h = m * sy; rect(g, X0 + i * bw + 8, m > 0 ? Y0 - h : Y0 + 4, bw - 16, Math.abs(h), m > 0 ? (i >= 7 && i <= 8 ? C.orange : C.green) : C.red); txt(g, bnd(i + 1), X0 + i * bw + bw / 2, Y0 + (m < 0 ? Math.abs(m * sy) + 40 : 40), F.mono(20), C.ink, 'center'); }, 'y'));
   pop(g, V(0.8), X0 + 3 * bw, 900, () => { g.strokeStyle = C.ink; g.lineWidth = 2; g.setLineDash([6, 8]); g.strokeRect(X0, 400, bw * 6, 470); g.setLineDash([]); txt(g, 'প্রথম ৬ মাস', X0 + 3 * bw, 430, F.bn(28, 600), C.ink, 'center'); });
   pop(g, V(P(1) + 0.2), 300, 1080, () => { coinStack(g, 220, 1150, 10, C.mustard); txt(g, inr(Math.round(465000 * eo((lt - P(1) - 0.2) / 1.6) / 1000) * 1000), 300, 1060, F.bn(40, 700), C.ink); txt(g, 'নিজের টাকা ফেরত', 300, 1100, F.bn(28, 600), C.green); });
-  pop(g, V(P(2) + 0.1), 780, 1080, () => { const u = ss(P(2), P(2) + 3, lt); rect(g, 680, 1080, 220, 50, C.shade); rect(g, 680, 1080, 220 * (1 - 0.18 * u), 50, C.blue); txt(g, 'লোন বাকি', 790, 1060, F.bn(28, 600), C.ink, 'center'); });
-  const L3 = ['আগে লাইসেন্স', 'রোজ জারের হিসেব', 'মানে আপস নয়'];
-  L3.forEach((s, i) => pop(g, V(P(3) + 1.0 + i * 1.5), 200 + i * 340, 1270, () => { circ(g, 200 + i * 340 - 110, 1270, 30, C.ink); txt(g, bnd(i + 1), 200 + i * 340 - 110, 1282, F.bn(32, 700), C.cream, 'center'); txt(g, s, 200 + i * 340 - 68, 1282, F.bn(28, 700), C.ink); }));
 };
 ART.S16 = (g, lt, V, P, t, last) => {
-  frame(g, 0, V, 540, 800, 400);
+  pop(g, V(0.1, 0.8), 540, 960, () => { circ(g, 540, 960, 380, C.orange); circ(g, 540, 960, 270, '#EE7B3E'); });
   pop(g, V(0.3), 540, 1280, () => rahul(g, 540, 1280, 1.3, { t, armR: -2.6 + Math.sin(lt * 5) * 0.3, hold: null, mouth: 'smile' }), 'up');
   pop(g, V(0.6), 300, 1280, () => jar(g, 300, 1280, 1.3, { label: 1 }));
   pop(g, V(0.8), 800, 1280, () => rickshaw(g, 780, 1280, 0.45, 6));
-  pop(g, V(P(0) + 0.3), 540, 460, () => tag(g, 540, 460, 'উদাহরণ — নিজের এলাকায় যাচাই করুন', C.ink, C.cream, 32));
   pop(g, V(P(1) + 0.1), 540, 620, () => { bubbleSay(g, 540, 620, 560, 120, 'কোন ব্যবসা? কমেন্টে লিখুন', C.orange, 0); });
 };
 
@@ -457,9 +447,9 @@ export function draw(g, t) {
   TNOW = t;
   const len = sc.b - sc.a, cu = eio(lt / len), mv = sc.n % 4;
   let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
-  const zc = [lerp(0.90, 0.95, cu), 0.93, lerp(0.96, 0.91, cu), 0.93][mv] * (1 + 0.016 * punch);
+  const zc = 0.82 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
   const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
-  L.save(); L.translate(540 + pxo, 1090 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
+  L.save(); L.translate(540 + pxo, 1030 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
   sc.art(L, lt, V, P, t, last); L.restore();
   L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.5; const sp = L.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate((si * 97) % 512, (si * 61) % 512)); L.fillStyle = sp; L.fillRect(0, 0, W, H); L.restore();
   g.drawImage(LAYER, 0, 0);
