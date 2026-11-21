@@ -1,0 +1,22 @@
+कितना कमाते हैं एक चायवाले? — third-party assets and their licences
+
+Voice
+- Narration: Microsoft Edge neural text-to-speech, voice hi-IN-MadhurNeural, generated through the open-source edge-tts client (https://github.com/rany2/edge-tts, GPL-3.0 for the client). The audio is synthetic speech, not a recording of a person.
+- Speech check: faster-whisper (MIT) with the OpenAI Whisper "small" model (MIT).
+
+Music (original score, written for this film; samples used)
+- Vibraphone: Versilian Community Sample Library (VCSL), Versilian Studios — CC0 1.0.
+- Flute, pizzicato double bass: VS Chamber Orchestra: Community Edition (VSCO 2 CE), Versilian Studios — CC0 1.0.
+- Bongos, hand clap: FreePats project (freepats.zenvoid.org) — CC0 1.0.
+- Brushes, celesta colour and all sound effects: synthesized procedurally in code for this film.
+
+Fonts (SIL Open Font License 1.1; licence texts in fonts/)
+- Poppins (Indian Type Foundry / The Poppins Project Authors) — captions and body text.
+- Rozha One (Indian Type Foundry) — titles and numbers.
+- Kalam (Indian Type Foundry) — the handwritten "कमेंट में बताइए".
+
+Picture
+- Drawn entirely in code. engine/toon.js and engine/icons.js are copied from the Lemo-Opuscar library's Mid-century Cartoon style (styles/midcentury-toon/demo/engine), Copyright (c) 2026 Lemomo, MIT License (https://github.com/lemomo-ai/lemo-opuscar/blob/main/LICENSES/MIT.txt). The render, mux and audio tools of the same library (MIT) build the film. engine/chaiwala.js adapts the library's glove-hand drawer; the chaiwala character and all props were designed for this film.
+
+Facts
+- All money figures are an illustrative estimate from public sources; see FACTS.md (OkCredit 2026 tea-stall cost worksheet; IIFL tea-stall business example).
