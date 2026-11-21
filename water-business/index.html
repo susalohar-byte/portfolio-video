@@ -1,5 +1,7 @@
 <!doctype html><meta charset="utf-8">
 <style>
+@font-face{font-family:NotoB;font-weight:800;src:url(fonts/noto-sans-bengali-bengali-800-normal.woff2)}
+@font-face{font-family:NotoB;font-weight:800;src:url(fonts/noto-sans-bengali-latin-800-normal.woff2);unicode-range:U+0000-00FF}
 @font-face{font-family:Atma;font-weight:700;src:url(fonts/atma-bengali-700-normal.woff2)}
 @font-face{font-family:Atma;font-weight:700;src:url(fonts/atma-latin-700-normal.woff2);unicode-range:U+0000-00FF}
 @font-face{font-family:Anek;font-weight:700;src:url(fonts/anek-bangla-bengali-700-normal.woff2)}
@@ -26,7 +28,7 @@ import * as film from './film.js';
 const vdir = new URLSearchParams(location.search).get('voice') === 'preview' ? 'voice/preview' : 'voice';
 const [lines, dur] = await Promise.all([fetch('lines.json').then(r => r.json()), fetch(vdir + '/dur.json').then(r => r.json())]);
 setup(lines, dur);
-await Promise.all(['700 88px Atma', '700 52px Anek', '88px Galada', '600 44px Baloo', '700 52px Baloo', '500 24px Plex', '700 68px Hind', '600 40px Hind', '500 40px Hind'].map(f => document.fonts.load(f, 'বাংলা A ₹')));
+await Promise.all(['800 76px NotoB', '700 88px Atma', '700 52px Anek', '88px Galada', '600 44px Baloo', '700 52px Baloo', '500 24px Plex', '700 68px Hind', '600 40px Hind', '500 40px Hind'].map(f => document.fonts.load(f, 'বাংলা A ₹')));
 const g = document.getElementById('c').getContext('2d');
 window.thumb = async () => { film.thumb(g); return g.canvas.toDataURL('image/jpeg', 0.95); };
 window.frame = async t => { draw(g, t); return g.canvas.toDataURL('image/jpeg', 0.93); };
