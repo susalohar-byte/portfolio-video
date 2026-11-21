@@ -20,7 +20,7 @@ const C = {
   red: '#C23B2E', green: '#56794A', pink: '#E7B49B', cream: '#F7F2E8', marble: '#DCD4C4', shade: '#B9AE99', rust: '#A5532B',
   terra: '#B0502F', gray: '#8C877E', navy: '#2B3A55', skin: '#C68A5B', skin2: '#A86F48', purple: '#6E4C8F', line: 'rgba(31,29,27,0.38)',
 };
-const F = { mono: (px, w = 500) => `${w} ${px}px Plex`, bn: (px, w = 600) => `${w} ${px}px Hind` };
+const F = { mono: (px, w = 500) => `${w} ${px}px Plex`, bn: (px, w = 600) => `${w} ${px}px Hind`, head: px => `${px}px Galada`, cap: (px, w = 600) => `${w} ${px}px Baloo` };
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const lerp = (a, b, u) => a + (b - a) * u;
 const ss = (a, b, x) => { const u = clamp((x - a) / (b - a)); return u * u * (3 - 2 * u); };
@@ -426,26 +426,75 @@ function labels(g, sc, V) {
   for (let i = 0; i < 16; i++) rect(g, 300 + i * 34, 1872, 24, 4, i < sc.n ? C.ink : 'rgba(31,29,27,0.18)');
 }
 function wrap(g, s, maxW) { const out = []; let cur = ''; for (const w of s.split(' ')) { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; }
+// hand-drawn pen stroke under the headline: a tapered, slightly wavy ink line drawn on left→right
+function penLine(g, cx, y, w, u, seed, col = C.orange) {
+  if (u <= 0) return;
+  const R = rng(seed), n = 40, pts = [];
+  const a1 = R() * 6, a2 = R() * 6, tilt = (R() - 0.5) * 10;
+  for (let i = 0; i <= n; i++) { const k = i / n; pts.push([cx - w / 2 + w * k, y + Math.sin(k * 5 + a1) * 3.5 + Math.sin(k * 13 + a2) * 1.6 + tilt * (k - 0.5)]); }
+  const m = Math.max(2, Math.round(n * clamp(u)));
+  const th = k => 7.5 * Math.sin(Math.PI * Math.min(1, k * 1.15)) ** 0.6 + 0.8;
+  g.fillStyle = col; g.beginPath();
+  for (let i = 0; i <= m; i++) { const [x, yy] = pts[i]; g.lineTo(x, yy - th(i / n)); }
+  for (let i = m; i >= 0; i--) { const [x, yy] = pts[i]; g.lineTo(x, yy + th(i / n) * 0.7); }
+  g.closePath(); g.fill();
+  // little flick at the end
+  if (u > 0.95) { const [x, yy] = pts[n]; g.beginPath(); g.moveTo(x - 4, yy - 4); g.quadraticCurveTo(x + 22, yy - 16, x + 30, yy - 34); g.lineTo(x + 26, yy - 34); g.quadraticCurveTo(x + 16, yy - 14, x - 6, yy + 2); g.fill(); }
+}
+// paper-cut caption strip: cream paper with cut/torn edges, shadow and a bit of tape
+function paperStrip(g, cx, cy, w, h, seed, fill = '#FBF7EE') {
+  const R = rng(seed), pts = [];
+  const step = 26;
+  for (let x = -w / 2; x <= w / 2; x += step) pts.push([x, -h / 2 + (R() - 0.5) * 9]);
+  for (let y = -h / 2; y <= h / 2; y += step) pts.push([w / 2 + (R() - 0.5) * 7, y]);
+  for (let x = w / 2; x >= -w / 2; x -= step) pts.push([x, h / 2 + (R() - 0.5) * 9]);
+  for (let y = h / 2; y >= -h / 2; y -= step) pts.push([-w / 2 + (R() - 0.5) * 7, y]);
+  g.save(); g.translate(cx, cy);
+  g.save(); g.translate(8, 10); poly(g, pts, 'rgba(60,40,20,0.22)'); g.restore();
+  poly(g, pts, fill);
+  g.save(); g.translate(-w / 2 + 70, -h / 2 + 2); g.rotate(-0.35); rect(g, -50, -16, 100, 32, 'rgba(227,162,50,0.75)'); g.restore();
+  g.restore();
+}
 function captions(g, sc, t, V) {
+  // headline (top) with a pen stroke under it
   const tv = V(0.25, 0.6);
-  if (tv > 0) { g.save(); g.globalAlpha = clamp(tv * 2); g.font = F.bn(74, 700); const tw = g.measureText(sc.title).width;
-    txt(g, sc.title, 540, 350 + (1 - eo(tv)) * 24, F.bn(74, 700), C.ink, 'center'); g.restore(); }
+  if (tv > 0) {
+    g.save(); g.globalAlpha = clamp(tv * 2); g.font = F.head(sc.title.length > 14 ? 76 : 88); const tw = g.measureText(sc.title).width;
+    txt(g, sc.title, 540, 330 + (1 - eo(tv)) * 24, F.head(sc.title.length > 14 ? 76 : 88), C.ink, 'center');
+    penLine(g, 540, 372, Math.min(820, tw * 0.9 + 60), clamp((t - sc.a - 0.45) / 0.55), sc.n * 7);
+    g.restore();
+  }
+  // caption on a paper-cut strip below the ground line
   const offs = PARTS[sc.id]; if (!offs) return;
   let k = -1; offs.forEach((o, i) => { if (t >= sc.v + o - 0.12) k = i; });
+  const draw1 = (kk, inU, outU) => {
+    if (kk < 0) return;
+    const p0 = sc.v + offs[kk], p1 = sc.v + (kk + 1 < offs.length ? offs[kk + 1] - 0.25 : DUR[sc.id]);
+    const said = clamp((t - p0) / Math.max(0.3, p1 - p0));
+    g.font = F.cap(44, 600);
+    const ls = wrap(g, sc.parts[kk], 800).slice(0, 3), lh = 60, hh = ls.length * lh + 44;
+    const ww = Math.min(900, Math.max(...ls.map(l => g.measureText(l).width)) + 90);
+    const cy = 1495 + (ls.length - 2) * 18, seed = sc.n * 31 + kk * 7;
+    const rot = ((seed % 7) - 3) * 0.006;
+    const e = back(inU, 1.4), o = eio(outU);
+    g.save();
+    g.globalAlpha = clamp(inU * 3) * (1 - o) * Math.min(1, V(0, 0.01) * 1.0001 + (sc === SC[SC.length - 1] ? 0 : 0));
+    g.translate(540 + o * 140, cy + (1 - e) * 70 + o * 40); g.rotate(rot + (1 - e) * -0.08 + o * 0.12);
+    g.scale(lerp(0.92, 1, e), lerp(0.6, 1, e));
+    paperStrip(g, 0, 0, ww, hh, seed);
+    let left = said * ls.reduce((a, l) => a + l.length, 0) * 1.04;
+    ls.forEach((l, i) => {
+      const y = -hh / 2 + 22 + lh * (i + 0.78), w = g.measureText(l).width, x0 = -w / 2;
+      txt(g, l, x0, y, F.cap(44, 600), '#B3AA9D');
+      const n = clamp(left / l.length); left -= l.length;
+      if (n > 0) { g.save(); g.beginPath(); g.rect(x0 - 6, y - 56, w * n + 6, 76); g.clip(); txt(g, l, x0, y, F.cap(44, 600), C.ink); g.restore(); }
+    });
+    g.restore();
+  };
   if (k < 0) return;
-  const ap = eo((t - (sc.v + offs[k] - 0.12)) / 0.3), vis = Math.min(ap, V(0, 0.01));
-  const p0 = sc.v + offs[k], p1 = sc.v + (k + 1 < offs.length ? offs[k + 1] - 0.25 : DUR[sc.id]);
-  const said = clamp((t - p0) / Math.max(0.3, p1 - p0));
-  g.save(); g.globalAlpha = vis; g.font = F.bn(46, 600);
-  const ls = wrap(g, sc.parts[k], 920).slice(0, 3), tot = ls.reduce((a, l) => a + l.length, 0);
-  let left = said * tot * 1.04;
-  ls.forEach((l, i) => {
-    const y = 462 + i * 62 + (1 - ap) * 10, w = g.measureText(l).width, x0 = 540 - w / 2;
-    txt(g, l, x0, y, F.bn(46, 600), '#A39C92');
-    const n = clamp(left / l.length); left -= l.length;
-    if (n > 0) { g.save(); g.beginPath(); g.rect(x0 - 6, y - 60, w * n + 6, 84); g.clip(); txt(g, l, x0, y, F.bn(46, 600), '#1F1D1B'); g.restore(); }
-  });
-  g.restore();
+  const tk = sc.v + offs[k] - 0.12, inU = clamp((t - tk) / 0.38);
+  if (k > 0 && inU < 1) draw1(k - 1, 1, clamp((t - tk) / 0.25));
+  draw1(k, inU, 0);
 }
 export function draw(g, t) {
   textures();
@@ -457,9 +506,9 @@ export function draw(g, t) {
   TNOW = t;
   const len = sc.b - sc.a, cu = eio(lt / len), mv = sc.n % 4;
   let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
-  const zc = 0.82 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
+  const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
   const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
-  L.save(); L.translate(540 + pxo, 1030 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
+  L.save(); L.translate(540 + pxo, 930 + pyo); L.scale(zc, zc); L.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); L.translate(-540, -830);
   sc.art(L, lt, V, P, t, last); L.restore();
   L.save(); L.globalCompositeOperation = 'destination-out'; L.globalAlpha = 0.5; const sp = L.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate((si * 97) % 512, (si * 61) % 512)); L.fillStyle = sp; L.fillRect(0, 0, W, H); L.restore();
   g.drawImage(LAYER, 0, 0);
@@ -519,8 +568,8 @@ export function thumb(g) {
   g.drawImage(LAYER, 0, 0);
   // headline
   txt(g, '₹১১ লাখ দিয়ে', 540, 420, F.bn(96, 700), C.ink, 'center');
-  txt(g, 'জলের ব্যবসা', 540, 540, F.bn(124, 700), C.blue, 'center');
-  rect(g, 300, 572, 480, 10, C.orange);
+  txt(g, 'জলের ব্যবসা', 540, 545, F.head(140), C.blue, 'center');
+  penLine(g, 540, 590, 520, 1, 5);
   tag(g, 540, 1760, 'ছোট শহরের পুরো হিসেব', C.ink, C.cream, 46);
   g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.11; g.fillStyle = g.createPattern(GRAIN, 'repeat'); g.fillRect(0, 0, W, H); g.restore();
 }
