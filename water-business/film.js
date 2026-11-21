@@ -244,35 +244,56 @@ const ART = {};
 // ---- soft modern backdrops (light tints), one shape per scene, gently animated
 const PAL = { peach: '#F5D5C2', mint: '#D3E6D8', sky: '#D2E2EE', butter: '#F4E4B8', lilac: '#E3D8EC', blush: '#F2D0CA', sand: '#EBDDC6' };
 const BACK = {
-  S01: ['arch', PAL.peach, 540, 1282, 640, 820], S02: ['blob', PAL.lilac, 520, 930, 380], S03: ['round', PAL.butter, 540, 900, 820, 760],
+  S01: ['sun', C.orange, 540, 900, 360], S02: ['blob', PAL.lilac, 520, 930, 380], S03: ['round', PAL.butter, 540, 900, 820, 760],
   S04: ['arch', PAL.lilac, 540, 1330, 760, 860], S05: ['round', PAL.mint, 540, 840, 900, 980], S06: ['blob', PAL.butter, 540, 860, 400],
   S07: ['round', PAL.sky, 540, 900, 900, 860], S08: ['blob', PAL.blush, 560, 960, 400], S09: ['arch', PAL.mint, 540, 1180, 820, 780],
   S10: ['blob', PAL.lilac, 540, 880, 410], S11: ['arch', PAL.sand, 470, 1330, 700, 800], S12: ['wave', PAL.mint, 540, 860, 960, 700],
   S13: ['round', PAL.peach, 540, 880, 900, 900], S14: ['split', PAL.peach, 540, 830, 920, 760], S15: ['arch', PAL.butter, 540, 1180, 860, 860],
-  S16: ['blob', PAL.peach, 540, 960, 420], INTRO: ['arch', PAL.peach, 600, 1480, 700, 900],
+  S16: ['blob', PAL.peach, 540, 960, 420], INTRO: ['sun', C.orange, 600, 1010, 380],
 };
 function backdrop(g, key, t, v) {
   const b = BACK[key]; if (!b || v <= 0) return;
   const [kind, col, x, y] = b, k = eo(v);
+  if (kind === 'sun') { g.save(); g.translate(x, y); g.scale(lerp(0.7, 1, back(v, 1.3)), lerp(0.7, 1, back(v, 1.3))); g.translate(-x, -y); sunDisc(g, x, y, b[4], t); g.restore(); return; }
   g.save(); g.globalAlpha *= clamp(v * 1.5);
-  if (kind === 'blob') {
-    const r = b[4] * lerp(0.6, 1, k); g.fillStyle = col; g.beginPath();
-    for (let i = 0; i <= 64; i++) { const a = i / 64 * TAU, rr = r * (1 + 0.07 * Math.sin(a * 3 + t * 0.9) + 0.05 * Math.sin(a * 5 - t * 1.3)); g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.92); }
-    g.closePath(); g.fill();
-  } else if (kind === 'arch') {
-    const w = b[4] * lerp(0.8, 1, k), h = b[5] * k * (1 + Math.sin(t * 1.2) * 0.006);
-    g.fillStyle = col; g.beginPath(); g.moveTo(x - w / 2, y); g.lineTo(x - w / 2, y - h + w / 2); g.arc(x, y - h + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, y); g.closePath(); g.fill();
-  } else if (kind === 'round') {
-    const w = b[4] * lerp(0.85, 1, k), h = b[5] * lerp(0.85, 1, k);
-    g.translate(x, y); g.rotate(Math.sin(t * 0.5) * 0.012); rrect(g, -w / 2, -h / 2, w, h, 90, col);
-  } else if (kind === 'wave') {
-    const w = b[4], h = b[5] * k; g.fillStyle = col; g.beginPath(); g.moveTo(x - w / 2, y + h / 2);
-    for (let i = 0; i <= 40; i++) { const u = i / 40; g.lineTo(x - w / 2 + w * u, y - h / 2 + Math.sin(u * 7 + t * 1.2) * 22); }
-    g.lineTo(x + w / 2, y + h / 2); g.closePath(); g.fill();
-  } else if (kind === 'split') {
-    rrect(g, x - b[4] / 2, y - b[5] / 2 - 30, b[4], b[5] / 2, 70, PAL.peach); rrect(g, x - b[4] / 2, y + 20, b[4], b[5] / 2, 70, PAL.sky);
+  const path = (ox = 0, oy = 0, sc = 1) => {
+    g.beginPath();
+    if (kind === 'blob') {
+      const r = b[4] * lerp(0.6, 1, k) * sc;
+      for (let i = 0; i <= 72; i++) { const a = i / 72 * TAU, rr = r * (1 + 0.07 * Math.sin(a * 3 + t * 0.9) + 0.05 * Math.sin(a * 5 - t * 1.3)); g.lineTo(x + ox + Math.cos(a) * rr, y + oy + Math.sin(a) * rr * 0.92); }
+      g.closePath();
+    } else if (kind === 'arch') {
+      const w = b[4] * lerp(0.8, 1, k) * sc, h = b[5] * k * sc * (1 + Math.sin(t * 1.2) * 0.006);
+      g.moveTo(x + ox - w / 2, y + oy); g.lineTo(x + ox - w / 2, y + oy - h + w / 2); g.arc(x + ox, y + oy - h + w / 2, w / 2, Math.PI, 0); g.lineTo(x + ox + w / 2, y + oy); g.closePath();
+    } else if (kind === 'round') {
+      const w = b[4] * lerp(0.85, 1, k) * sc, h = b[5] * lerp(0.85, 1, k) * sc; g.roundRect(x + ox - w / 2, y + oy - h / 2, w, h, 90);
+    } else if (kind === 'wave') {
+      const w = b[4] * sc, h = b[5] * k * sc; g.moveTo(x + ox - w / 2, y + oy + h / 2);
+      for (let i = 0; i <= 40; i++) { const u = i / 40; g.lineTo(x + ox - w / 2 + w * u, y + oy - h / 2 + Math.sin(u * 7 + t * 1.2) * 22); }
+      g.lineTo(x + ox + w / 2, y + oy + h / 2); g.closePath();
+    } else if (kind === 'split') {
+      g.roundRect(x + ox - b[4] / 2, y + oy - b[5] / 2 - 30, b[4], b[5] / 2, 70); g.roundRect(x + ox - b[4] / 2, y + oy + 20, b[4], b[5] / 2, 70);
+    }
+  };
+  const fillCol = kind === 'split' ? null : col;
+  // 1) soft shadow + a deeper second paper layer peeking out (paper-cut depth)
+  g.save(); path(18, 20); g.fillStyle = 'rgba(80,55,30,0.10)'; g.fill(); g.restore();
+  g.save(); g.translate(x, y); g.rotate(-0.025); g.translate(-x, -y); path(-10, -8, 1.0); g.fillStyle = mixc(kind === 'split' ? PAL.peach : col, '#000000', 0.06); g.fill(); g.restore();
+  // 2) main shape
+  if (kind === 'split') { g.save(); g.beginPath(); g.roundRect(x - b[4] / 2, y - b[5] / 2 - 30, b[4], b[5] / 2, 70); g.fillStyle = PAL.peach; g.fill(); g.beginPath(); g.roundRect(x - b[4] / 2, y + 20, b[4], b[5] / 2, 70); g.fillStyle = PAL.sky; g.fill(); g.restore(); }
+  else { path(); g.fillStyle = fillCol; g.fill(); }
+  // 3) inside the shape: halftone dots on one side + print grain
+  g.save(); path(); g.clip();
+  const dc = mixc(kind === 'split' ? PAL.sky : col, '#000000', 0.09), x0 = x + 60, y0 = y + 40;
+  g.fillStyle = dc;
+  for (let gy = -460; gy <= 460; gy += 26) for (let gx = -480; gx <= 480; gx += 26) {
+    const px = x + gx + (Math.round(gy / 26) % 2 ? 13 : 0), py = y + gy, d = Math.hypot(px - (x + 420), py - (y + 380)) / 620;
+    const r = 6.5 * clamp(1 - d) ** 1.4; if (r > 0.6) { g.beginPath(); g.arc(px, py, r, 0, TAU); g.fill(); }
   }
-  // a few small modern accents (dots / rings) floating around the shape
+  g.restore();
+  // 4) thin inner highlight edge (top-left), like a cut paper lip
+  g.save(); path(-3, -3, 1); g.strokeStyle = 'rgba(255,252,244,0.55)'; g.lineWidth = 3; g.stroke(); g.restore();
+// a few small modern accents (dots / rings) floating around the shape
   const R = rng(key.charCodeAt(1) * 31 + key.charCodeAt(2));
   for (let i = 0; i < 5; i++) {
     const ax = x + (R() - 0.5) * 900, ay = y + (R() - 0.5) * 760 + Math.sin(t * 1.4 + i) * 10, r = 6 + R() * 10;
@@ -744,7 +765,7 @@ export function thumb(g) {
   g.drawImage(PAPER, 0, 0);
   const L = LAYER.getContext('2d'); L.clearRect(0, 0, W, H);
   // big sun disc behind the hero
-  backdrop(L, 'INTRO', 0, 1);
+  sunDisc(L, 600, 1010, 380, 0);
   // jar pyramid (the business)
   const row = (n, y, x0) => { for (let i = 0; i < n; i++) jar(L, x0 + i * 112, y, 1.05, { label: i % 2 === 0 }); };
   row(4, 1480, 640); row(3, 1340, 696); row(2, 1200, 752); row(1, 1060, 808);
