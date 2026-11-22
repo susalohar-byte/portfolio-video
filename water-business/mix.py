@@ -38,10 +38,9 @@ lvl = lambda x, db: x / (np.sqrt(np.mean(x ** 2)) + 1e-9) * 10 ** (db / 20)
 MAP = {'whoosh': ('s_page', -40, -0.05), 'bell': ('s_bell', -38, 0.0)}
 sfx = np.zeros(N)
 for e in EV:
-    if e['k'] not in MAP: continue
+    if e['k'] not in MAP or (e['k'] == 'whoosh' and e['t'] < sc('S01') + 0.5): continue
     n, db, off = MAP[e['k']]; add(sfx, lvl(S[n], db), e['t'] + off)
 # the cover -> first scene gets a soft whoosh; the big totals get a "win" chime
-add(sfx, lvl(S['s_woosh'], -40), sc('S01') - 0.25)
 for sid, k, d in [('S05', 8, 0.2), ('S13', 6, 0.15)]:   # the two big totals
     add(sfx, lvl(S['s_coinwin'], -38), VSTART[sid] + json.load(open(VDIR + '/dur.json'))['parts'][sid][k] + d)
 mix = vo + mus + sfx

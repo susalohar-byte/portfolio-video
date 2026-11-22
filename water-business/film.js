@@ -524,6 +524,74 @@ function ambient(g, t, si, v) {
   for (let i = 0; i < 3; i++) { const x = bx + i * 46, y = 520 + i * 18 + Math.sin(t * 2 + i) * 6, f = Math.sin(t * 9 + i) * 7; g.strokeStyle = C.ink; g.lineWidth = 3.5; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 14, y - f); g.quadraticCurveTo(x - 6, y - 8, x, y); g.quadraticCurveTo(x + 6, y - 8, x + 14, y - f); g.stroke(); }
   g.restore();
 }
+// ---------------------------------------------------------------- environments: a soft setting behind every scene
+const ENVK = { S01: ['town', 1282], S02: ['street', 1150], S03: ['field', 1340], S04: ['office', 1330], S05: ['office', 1330], S06: ['bank', 1150],
+  S07: ['factory', 1290], S08: ['street', 1300], S09: ['town', 900], S10: ['store', 1300], S11: ['night', 1330], S12: ['field', 1340],
+  S13: ['office', 1330], S14: null, S15: ['evening', 1340], S16: ['town', 1282] };
+const tint = (c, k = 0.62) => mixc(c, C.paper, k);
+function skyline(g, gy, seed, col, hmin = 90, hmax = 260, win = true) {
+  const R = rng(seed); let x = -60;
+  while (x < 1140) { const w = 70 + R() * 90, h = hmin + R() * (hmax - hmin); rect(g, x, gy - h, w, h, col);
+    if (R() > 0.6) poly(g, [[x - 6, gy - h], [x + w / 2, gy - h - w * 0.35], [x + w + 6, gy - h]], col);
+    if (win) for (let yy = gy - h + 18; yy < gy - 30; yy += 34) for (let xx = x + 12; xx < x + w - 18; xx += 26) if (R() > 0.35) rect(g, xx, yy, 12, 16, mixc(col, '#FFFFFF', 0.35));
+    x += w + 8 + R() * 20; }
+}
+function tree(g, x, gy, s, col) { rect(g, x - 5 * s, gy - 60 * s, 10 * s, 60 * s, tint(C.ink, 0.7)); circ(g, x, gy - 80 * s, 36 * s, col); circ(g, x - 26 * s, gy - 62 * s, 24 * s, col); circ(g, x + 26 * s, gy - 62 * s, 24 * s, col); }
+function envArt(g, kind, gy, t, seed) {
+  const sky = kind === 'evening' ? ['#F1D6C2', '#ECE5D8'] : kind === 'night' ? ['#C3CCE0', '#DCE0E6'] : ['#D9E5EA', '#ECE5D8'];
+  if (['town', 'street', 'field', 'evening', 'night', 'bank'].includes(kind)) {
+    const gr = g.createLinearGradient(0, 380, 0, gy); gr.addColorStop(0, sky[0]); gr.addColorStop(1, sky[1]); g.fillStyle = gr; g.fillRect(-80, 380, 1240, gy - 380);
+    if (kind === 'night') { circ(g, 860, 520, 46, '#F4EEDC'); circ(g, 878, 508, 40, '#C3CCE0'); const R = rng(9); for (let i = 0; i < 22; i++) { const a = 0.4 + 0.6 * Math.abs(Math.sin(t * 2 + i)); g.globalAlpha *= a; circ(g, R() * 1080, 420 + R() * 300, 2 + R() * 2, '#FFFFFF'); g.globalAlpha /= a; } }
+    if (kind === 'evening') circ(g, 820, gy - 260, 90, '#F3C5A2');
+  }
+  if (kind === 'town' || kind === 'street' || kind === 'evening' || kind === 'night') {
+    skyline(g, gy, seed, tint(kind === 'night' ? C.navy : C.shade, kind === 'night' ? 0.55 : 0.55), 120, 300);
+    skyline(g, gy, seed + 7, tint(kind === 'night' ? C.navy : C.shade, kind === 'night' ? 0.35 : 0.3), 60, 170, false);
+    for (const [x, sc] of [[60, 1.1], [1010, 1.3], [300, 0.8]]) tree(g, x, gy, sc, tint(C.green, kind === 'night' ? 0.4 : 0.5));
+  }
+  if (kind === 'field') {
+    g.fillStyle = tint(C.green, 0.72); g.beginPath(); g.moveTo(-80, gy); for (let x = -80; x <= 1160; x += 40) g.lineTo(x, gy - 260 - Math.sin(x * 0.006 + 1) * 70); g.lineTo(1160, gy); g.fill();
+    g.fillStyle = tint(C.green, 0.6); g.beginPath(); g.moveTo(-80, gy); for (let x = -80; x <= 1160; x += 40) g.lineTo(x, gy - 140 - Math.sin(x * 0.009 + 3) * 50); g.lineTo(1160, gy); g.fill();
+    for (const x of [140, 420, 760, 960]) tree(g, x, gy - 150 - Math.sin(x * 0.009 + 3) * 50, 0.7, tint(C.green, 0.4));
+  }
+  if (kind === 'bank') {
+    rect(g, 140, gy - 520, 800, 520, tint(C.marble, 0.3)); poly(g, [[110, gy - 520], [540, gy - 680], [970, gy - 520]], tint(C.shade, 0.45));
+    for (let i = 0; i < 6; i++) rect(g, 190 + i * 140, gy - 470, 44, 470, tint(C.shade, 0.35)); rect(g, 120, gy - 40, 840, 40, tint(C.shade, 0.4));
+  }
+  if (kind === 'office' || kind === 'store') {
+    rect(g, -80, 380, 1240, gy - 380, '#E9E0D0'); rect(g, -80, gy - 150, 1240, 12, tint(C.terra, 0.55)); rect(g, -80, gy - 138, 1240, 138, '#E3D8C5');
+    if (kind === 'office') {
+      rect(g, 80, 470, 260, 300, tint(C.ink, 0.55)); rect(g, 96, 486, 228, 268, '#D6E3EA'); g.save(); g.beginPath(); g.rect(96, 486, 228, 268); g.clip(); skyline(g, 754, seed, tint(C.shade, 0.45), 40, 130, false); g.restore(); rect(g, 205, 486, 10, 268, tint(C.ink, 0.55)); rect(g, 96, 615, 228, 10, tint(C.ink, 0.55));
+      circ(g, 900, 520, 52, '#F5F0E6'); g.strokeStyle = tint(C.ink, 0.35); g.lineWidth = 5; g.beginPath(); g.arc(900, 520, 52, 0, TAU); g.stroke();
+      stroke(g, [[900, 520], [900 + Math.cos(t * 0.8 - 1.57) * 38, 520 + Math.sin(t * 0.8 - 1.57) * 38]], tint(C.ink, 0.3), 5); stroke(g, [[900, 520], [900 + 24, 520 - 10]], tint(C.ink, 0.3), 6);
+      rect(g, 960, gy - 230, 70, 80, tint(C.terra, 0.4)); circ(g, 995, gy - 260, 40, tint(C.green, 0.45)); circ(g, 970, gy - 290, 26, tint(C.green, 0.45));
+    } else {
+      for (let r = 0; r < 3; r++) { rect(g, 60, 500 + r * 180, 960, 14, tint(C.terra, 0.45)); for (let i = 0; i < 12; i++) jar(g, 100 + i * 80, 500 + r * 180, 0.45, { c: tint(C.sky, 0.45), cap: tint(C.blue, 0.45) }); }
+    }
+  }
+  if (kind === 'factory' || kind === 'night') {
+    if (kind === 'factory') { rect(g, -80, 380, 1240, gy - 380, '#E3E6E2'); g.strokeStyle = 'rgba(31,29,27,0.06)'; g.lineWidth = 2; for (let y = 400; y < gy; y += 60) { g.beginPath(); g.moveTo(-80, y); g.lineTo(1160, y); g.stroke(); } for (let x = -80; x < 1160; x += 90) { g.beginPath(); g.moveTo(x, 380); g.lineTo(x, gy); g.stroke(); } }
+    if (kind === 'factory') { rect(g, -80, 430, 1240, 18, tint(C.gray, 0.5)); rect(g, -80, 470, 1240, 12, tint(C.blue, 0.6)); for (let x = 40; x < 1100; x += 220) rect(g, x, 420, 24, 70, tint(C.gray, 0.4));
+      for (let i = 0; i < 24; i++) rect(g, -80 + i * 54, gy - 22, 27, 22, i % 2 ? tint(C.mustard, 0.5) : tint(C.ink, 0.65)); }
+  }
+  // ground under the ground line
+  if (kind !== 'office' && kind !== 'store' && kind !== 'factory') { rect(g, -80, gy, 1240, 260, kind === 'night' ? '#D2D4D6' : '#E3D9C6'); if (kind === 'town' || kind === 'street') for (let x = -60; x < 1140; x += 110) rect(g, x, gy + 70, 60, 8, '#EEE6D6'); }
+}
+let ENVC = null;
+function drawEnv(ctx, sc, t, v, zc, tx, ty) {
+  const e = ENVK[sc.id]; if (!e || v <= 0) return;
+  if (!ENVC) ENVC = new OffscreenCanvas(W, H);
+  const g = ENVC.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  g.save(); g.translate(tx, ty); g.scale(zc, zc); g.translate(-540, -830); envArt(g, e[0], e[1], t, sc.n * 13); g.restore();
+  // feather into the paper: fade at the top, below the ground, and at the sides
+  const sy = ty + (e[1] - 830) * zc;
+  g.globalCompositeOperation = 'destination-in';
+  let gr = g.createLinearGradient(0, 520, 0, sy + 200); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.3, 'rgba(0,0,0,1)'); gr.addColorStop(Math.max(0.31, (sy + 40 - 520) / (sy + 200 - 520)), 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  gr = g.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.2, 'rgba(0,0,0,1)'); gr.addColorStop(0.8, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+  ctx.save(); ctx.globalAlpha *= clamp(v) * 0.9; ctx.drawImage(ENVC, 0, 0); ctx.restore();
+}
 // ---------------------------------------------------------------- textures
 let GRAIN, SPECK, PAPER, LAYER;
 function textures() {
@@ -687,6 +755,7 @@ function sceneInto(ctx, si, t, hold) {
     let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
     const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
     const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
+    drawEnv(ctx, sc, t, V(0, 0.6), zc, 540 + pxo, 930 + pyo);
     ctx.save(); ctx.translate(540 + pxo, 930 + pyo); ctx.scale(zc, zc); ctx.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); ctx.translate(-540, -830);
     backdrop(ctx, sc.id, t, V(0.05, 0.7)); ambient(ctx, t, si, V(0.1, 0.8)); sc.art(ctx, lt, V, P, t, last); ctx.restore();
   }
