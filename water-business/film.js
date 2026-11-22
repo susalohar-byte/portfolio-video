@@ -755,9 +755,8 @@ function sceneInto(ctx, si, t, hold) {
     let punch = 0; PARTS[sc.id].forEach((o, i) => { if (i) { const d = lt - (LEAD + o); if (d > 0 && d < 0.7) punch = Math.max(punch, Math.sin(Math.PI * clamp(d / 0.7)) * (1 - d / 0.7 * 0.3)); } });
     const zc = 0.88 * [lerp(0.97, 1.02, cu), 1.0, lerp(1.03, 0.98, cu), 1.0][mv] * (1 + 0.016 * punch);
     const pxo = mv === 1 ? lerp(26, -26, cu) : 0, pyo = mv === 3 ? lerp(20, -20, cu) : 0;
-    drawEnv(ctx, sc, t, V(0, 0.6), zc, 540 + pxo, 930 + pyo);
     ctx.save(); ctx.translate(540 + pxo, 930 + pyo); ctx.scale(zc, zc); ctx.rotate(mv === 3 ? lerp(-0.006, 0.006, cu) : 0); ctx.translate(-540, -830);
-    backdrop(ctx, sc.id, t, V(0.05, 0.7)); if (!(ENVK[sc.id] && ['office', 'store', 'factory'].includes(ENVK[sc.id][0]))) ambient(ctx, t, si, V(0.1, 0.8)); sc.art(ctx, lt, V, P, t, last); ctx.restore();
+    backdrop(ctx, sc.id, t, V(0.05, 0.7)); ambient(ctx, t, si, V(0.1, 0.8)); sc.art(ctx, lt, V, P, t, last); ctx.restore();
   }
   ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.globalAlpha = 0.5; const sp = ctx.createPattern(SPECK, 'repeat'); sp.setTransform(new DOMMatrix().translate(((si + 1) * 97) % 512, ((si + 1) * 61) % 512)); ctx.fillStyle = sp; ctx.fillRect(0, 0, W, H); ctx.restore();
 }
