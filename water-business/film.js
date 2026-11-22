@@ -2,7 +2,7 @@
 // 1080×1920, 24 fps. Scene timing follows the voice durations (voice/dur.json); draw(g, t) is pure.
 export const W = 1080, H = 1920, FPS = 24;
 export let DURATION = 300;
-const LEAD = 0.55, GAP = 0.85, INTRO = 1.9;   // visual lead before each voice line, gap between lines
+const LEAD = 0.55, GAP = 0.85, INTRO = 0.5;   // visual lead before each voice line, gap between lines
 let LINES = [], DUR = {}, PARTS = {}, WORDS = {}, SC = [];
 export function setup(lines, dur) {
   LINES = lines; DUR = dur.dur; PARTS = dur.parts; WORDS = dur.words || {};
