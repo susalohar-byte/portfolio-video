@@ -29,7 +29,9 @@ sc = lambda sid: VSTART[sid] - LEAD
 vo = np.zeros(N)
 for sid, t in VSTART.items(): add(vo, load(f'{VDIR}/{sid}.wav'), t)
 MUSIC_GAIN = 0.03
-cover = np.ones(N); cover[:int(sc('S01') * SR)] = 2.0
+# silence on the cover: nothing plays until the voice starts, then the music fades in under it
+v0 = min(VSTART.values()); cover = np.ones(N); cover[:int(v0 * SR)] = 0.0
+fi = int(1.5 * SR); cover[int(v0 * SR):int(v0 * SR) + fi] = np.linspace(0, 1, fi)
 mus *= MUSIC_GAIN * cover
 
 # ---- sfx
